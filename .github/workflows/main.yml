@@ -1,0 +1,144 @@
+name: build
+
+on: [ push, pull_request ]
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        ruby-version:
+          - 3.0.0
+          - 2.7.2
+          - 2.6.6
+          - 2.5.8
+          - 2.4.10
+          - 2.3.8
+          - 2.2.10
+          - jruby-9.2.14.0
+          - truffleruby-21.0.0
+        gemfile:
+          - rails-edge
+          - rails-6.1
+          - rails-6.0
+          - rails-5.2
+          - rails-5.1
+          - rails-5.0
+        exclude:
+          - gemfile: rails-edge
+            ruby-version: 2.6.6
+          - gemfile: rails-edge
+            ruby-version: 2.5.8
+          - gemfile: rails-edge
+            ruby-version: 2.4.10
+          - gemfile: rails-edge
+            ruby-version: 2.3.8
+          - gemfile: rails-edge
+            ruby-version: 2.2.10
+          - gemfile: rails-edge
+            ruby-version: jruby-9.2.14.0
+          - gemfile: rails-edge
+            ruby-version: truffleruby-21.0.0
+
+          - ruby-version: 3.0.0
+            gemfile: rails-5.2
+          - ruby-version: 3.0.0
+            gemfile: rails-5.1
+          - ruby-version: 3.0.0
+            gemfile: rails-5.0
+
+          - gemfile: rails-6.1
+            ruby-version: 2.4.10
+          - gemfile: rails-6.1
+            ruby-version: 2.3.8
+          - gemfile: rails-6.1
+            ruby-version: 2.2.10
+          - gemfile: rails-6.1
+            ruby-version: 2.2.10
+
+          - gemfile: rails-6.0
+            ruby-version: 2.4.10
+          - gemfile: rails-6.0
+            ruby-version: 2.3.8
+          - gemfile: rails-6.0
+            ruby-version: 2.2.10
+
+          - gemfile: rails-5.2
+            ruby-version: 2.2.10
+
+    env:
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
+      RAILS_ENV: test
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Selected Gemfile
+        run: echo $BUNDLE_GEMFILE
+
+      - name: Set up Ruby ${{ matrix.ruby-version }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rspec --format documentation
+
+
+  test_bundler_v1:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        ruby-version:
+          - 2.6.6
+          - 2.5.8
+          - 2.4.10
+          - 2.3.8
+          - 2.2.10
+        gemfile:
+          - rails-4.2
+          - rails-4.1
+          - rails-4.0
+          - rails-3.2
+
+        exclude:
+          - gemfile: rails-4.1
+            ruby-version: 2.6.6
+          - gemfile: rails-4.1
+            ruby-version: 2.5.8
+          - gemfile: rails-4.1
+            ruby-version: 2.4.10
+
+          - gemfile: rails-4.0
+            ruby-version: 2.6.6
+          - gemfile: rails-4.0
+            ruby-version: 2.5.8
+          - gemfile: rails-4.0
+            ruby-version: 2.4.10
+
+    env:
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
+      RAILS_ENV: test
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Selected Gemfile
+        run: echo $BUNDLE_GEMFILE
+
+      - name: Set up Ruby ${{ matrix.ruby-version }}
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler: 1.17
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rspec --format documentation
