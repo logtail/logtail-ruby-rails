@@ -20,7 +20,7 @@ namespace :logtail do
 
     if File.exist?(config_file) && !force
       puts "logtail.rb file already exists.  Use `rake logtail:install force=true` to overwrite."
-      return
+      next
     end
 
     File.open(config_file, 'w') { |out| out.puts(content) }
