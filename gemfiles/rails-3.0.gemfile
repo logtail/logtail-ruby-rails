@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gem 'rails', '~> 3.0.0'
 
-gem 'logtail-ruby'
+gem 'logtail'
 gem 'logtail-rack'
 
 gemspec :path => '../'
