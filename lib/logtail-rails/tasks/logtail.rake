@@ -25,7 +25,7 @@ namespace :logtail do
       next
     end
 
-    File.open(config_file, 'w') { |out| out.puts(content(source_token) }
+    File.open(config_file, 'w') { |out| out.puts(content(source_token)) }
 
     puts <<~EOF unless quiet
       Installed a default configuration file at #{config_file}.
