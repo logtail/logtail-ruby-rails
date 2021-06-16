@@ -26,4 +26,20 @@ RSpec.describe ActiveSupport::TaggedLogging, :rails_23 => true do
       expect(io.string).to include("\"payment_rejected\":")
     end
   end
+
+  describe "adds tags to the log event" do
+    let(:io) { StringIO.new }
+
+    it "should add the tag to the log event" do
+      logger = ActiveSupport::TaggedLogging.new(Logtail::Logger.new(io))
+      logger.tagged('ABC') { |tagged_logger| tagged_logger.info('tagged log') }
+      expect(io.string).to include(',"tags":["ABC"],')
+    end
+
+    it "should add multiple tags to the log event" do
+      logger = ActiveSupport::TaggedLogging.new(Logtail::Logger.new(io))
+      logger.tagged('ABC') { |a| a.tagged('DEF') { |b| b.info('tagged log') } }
+      expect(io.string).to include(',"tags":["ABC","DEF"],')
+    end
+  end
 end
