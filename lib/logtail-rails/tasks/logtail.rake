@@ -21,24 +21,37 @@ namespace :logtail do
     config_file = 'config/initializers/logtail.rb'
 
     if File.exist?(config_file) && !force
-      puts "logtail.rb file already exists.  Use `rake logtail:install force=true` to overwrite."
+      puts "logtail.rb file already exists. Use `rake logtail:install force=true` to overwrite."
       next
     end
 
     File.open(config_file, 'w') { |out| out.puts(content(source_token)) }
 
-    puts <<~EOF unless quiet
-      Installed a default configuration file at #{config_file}.
-    EOF
+    return if quiet
 
-    puts <<~EOF unless quiet
-      To monitor your logs in production mode, sign up for an account
-      at logtail.com, and replace the source token in the logtail.rb file
-      with the one you receive upon registration.
-    EOF
+    if source_token.nil? || source_token == ''
+      puts <<~EOF
+        Installed a default configuration file at #{config_file}.
+      EOF
 
-    puts <<~EOF unless quiet
-      Visit logtail.com/help if you are experiencing installation issues.
-    EOF
+      puts <<~EOF
+        To monitor your logs in production mode, sign up for an account
+        at logtail.com, and replace the source token in the logtail.rb file
+        with the one you receive upon registration.
+      EOF
+
+      puts <<~EOF
+        Visit logtail.com/help if you are experiencing installation issues.
+      EOF
+    else
+      puts <<~EOF
+        Installed a configuration file at #{config_file} with a source token 
+        ending with '#{source_token[-4..]}'.
+      EOF
+
+      puts <<~EOF
+        Visit logtail.com/help if you are experiencing installation issues.
+      EOF
+    end
   end
 end
