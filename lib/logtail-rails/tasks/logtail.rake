@@ -46,7 +46,7 @@ namespace :logtail do
     else
       puts <<~EOF
         Installed a configuration file at #{config_file} with a source token 
-        ending with '#{source_token[-4..]}'.
+        ending with '#{source_token[-4..-1]}'.
       EOF
 
       puts <<~EOF
