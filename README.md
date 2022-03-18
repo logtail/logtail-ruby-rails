@@ -36,7 +36,7 @@ To help you get started with using Logtail in your Ruby on Rails projects, we ha
 
 ## Download and install the example project
 
-You can download the [example project](https://github.com/logtail/logtail-rails/tree/main/example-project) from GitHub directly or you can clone it to a select directory. Make sure you are in the projects directory and run the following command:
+You can download the [example project](https://github.com/logtail/logtail-ruby-rails/tree/main/example-project) from GitHub directly or you can clone it to a select directory. Make sure you are in the projects directory and run the following command:
 
 ```bash
 bundle install
@@ -73,7 +73,7 @@ This will create a total of 6 different logs, each corresponding to a different 
 
 ## Explore how example project works
  
-Learn how to setup Ruby logging by exploring the workings of the [example project](https://github.com/logtail/logtail-ruby/tree/main/example-project) in detail. 
+Learn how to setup Ruby logging by exploring the workings of the [example project](https://github.com/logtail/logtail-ruby-rails/tree/main/example-project) in detail. 
  
 ---
  
