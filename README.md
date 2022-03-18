@@ -60,7 +60,7 @@ bundle exec rake logtail:install source_token=SOURCE_TOKEN
 rails server
 ```
 
-This will open a local server 127.0.0.1:3000. On the main page, click the "Let's go!" button to generate test logs.
+This will open a local server [127.0.0.1:3000.](http://127.0.0.1:3000/) On the main page, click the "Let's go!" button to generate test logs.
 
 You should see the following output:
 
