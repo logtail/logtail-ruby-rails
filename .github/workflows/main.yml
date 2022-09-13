@@ -1,9 +1,6 @@
 name: build
 
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
+on: [ push, pull_request, workflow_dispatch]
 
 jobs:
   test:
@@ -14,6 +11,7 @@ jobs:
 
       matrix:
         ruby-version:
+          - 3.1.2
           - 3.0.0
           - 2.7.2
           - 2.6.6
@@ -25,6 +23,9 @@ jobs:
           - truffleruby-21.0.0
         gemfile:
           - rails-edge
+          - rails-7.0
+          - rails-6.2
+          - rails-6.2
           - rails-6.1
           - rails-6.0
           - rails-5.2
