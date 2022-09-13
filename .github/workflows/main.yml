@@ -61,6 +61,19 @@ jobs:
           - gemfile: rails-6.1
             ruby-version: 2.2.10
 
+          - gemfile: rails-7.0
+            ruby-version: 2.6.6
+          - gemfile: rails-7.0
+            ruby-version: 2.5.8
+          - gemfile: rails-7.0
+            ruby-version: 2.4.10
+          - gemfile: rails-7.0
+            ruby-version: 2.3.8
+          - gemfile: rails-7.0
+            ruby-version: 2.2.10
+          - gemfile: rails-7.0
+            ruby-version: 2.2.10
+
           - gemfile: rails-6.0
             ruby-version: 2.4.10
           - gemfile: rails-6.0
