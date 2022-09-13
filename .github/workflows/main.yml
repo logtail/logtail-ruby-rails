@@ -62,6 +62,10 @@ jobs:
             ruby-version: 2.2.10
 
           - gemfile: rails-7.0
+            ruby-version: jruby-9.2.14.0
+          - gemfile: rails-7.0
+            ruby-version: truffleruby-21.0.0
+          - gemfile: rails-7.0
             ruby-version: 2.6.6
           - gemfile: rails-7.0
             ruby-version: 2.5.8
@@ -73,6 +77,13 @@ jobs:
             ruby-version: 2.2.10
           - gemfile: rails-7.0
             ruby-version: 2.2.10
+
+          - ruby-version: 3.1.2
+            gemfile: rails-5.2
+          - ruby-version: 3.1.2
+            gemfile: rails-5.1
+          - ruby-version: 3.1.2
+            gemfile: rails-5.0
 
           - gemfile: rails-6.0
             ruby-version: 2.4.10
