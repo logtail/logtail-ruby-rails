@@ -1,7 +1,11 @@
 require "logtail-rails/overrides"
 
 require "logtail"
-require "rails"
+
+require "rails/railtie"
+require "active_record"
+require "rack"
+
 require "logtail-rails/active_support_log_subscriber"
 require "logtail-rails/config"
 require "logtail-rails/railtie"

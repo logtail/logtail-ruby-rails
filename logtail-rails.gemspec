@@ -29,7 +29,10 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "logtail", "~> 0.1"
   spec.add_runtime_dependency "logtail-rack", "~> 0.1"
-  spec.add_runtime_dependency "rails", ">= 3.0.0"
+
+  spec.add_runtime_dependency 'activerecord', '>= 3.0.0'
+  spec.add_runtime_dependency 'railties', '>= 3.0.0'
+  spec.add_runtime_dependency 'actionpack', '>= 3.0.0'
 
   spec.add_development_dependency "bundler", ">= 0.0"
 
