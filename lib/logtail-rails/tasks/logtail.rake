@@ -4,11 +4,13 @@ namespace :logtail do
   PLACEHOLDER = '<SOURCE_TOKEN>'.freeze
   def content(source_token = nil)
     <<~RUBY
-      if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
-        http_device = Logtail::LogDevices::HTTP.new('#{source_token || PLACEHOLDER}')
-        Rails.logger = Logtail::Logger.new(http_device)
-      else
-        Rails.logger = Logtail::Logger.new(STDOUT)
+      Rails.application.configure do
+        if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
+          http_device = Logtail::LogDevices::HTTP.new('#{source_token || PLACEHOLDER}')
+          config.logger = Logtail::Logger.new(http_device)
+        else
+          config.logger = Logtail::Logger.new(STDOUT)
+        end
       end
     RUBY
   end
@@ -17,11 +19,16 @@ namespace :logtail do
     quiet = ENV['quiet']
     force = ENV['force']
     source_token = ENV['source_token']
+    source_token = nil if source_token == ''
 
     config_file = 'config/initializers/logtail.rb'
 
     if File.exist?(config_file) && !force
-      puts "logtail.rb file already exists. Use `rake logtail:install force=true` to overwrite."
+      puts <<~EOF
+        #{config_file} file already exists.
+        Overwrite the config with:
+          rake logtail:install force=true source_token=<SOURCE_TOKEN>
+      EOF
       next
     end
 
@@ -29,29 +36,39 @@ namespace :logtail do
 
     return if quiet
 
-    if source_token.nil? || source_token == ''
+    info = <<~EOF
+      Want to see full setup instructions?
+      Check out https://betterstack.com/docs/logs/ruby-and-rails/
+
+      Need help?
+      Let us know at hello@logtail.com
+      We are happy to help!
+    EOF
+
+    if source_token.nil?
       puts <<~EOF
-        Installed a default configuration file at #{config_file}.
+        Installed a configuration file with a token placeholder to #{config_file}.
+
       EOF
 
       puts <<~EOF
-        To monitor your logs in production mode, sign up for an account
-        at logtail.com, and replace the source token in the logtail.rb file
-        with the one you receive upon registration.
+        You will need a Logtail source token to send logs to Logtail!
+        Get your source token at https://logtail.com/ -> Sources
+
+        Set up Logtail logger with:
+          rake logtail:install force=true source_token=<SOURCE_TOKEN>
+
       EOF
 
-      puts <<~EOF
-        Visit logtail.com/help if you are experiencing installation issues.
-      EOF
+      puts info
     else
       puts <<~EOF
-        Installed a configuration file at #{config_file} with a source token 
-        ending with '#{source_token[-4..-1]}'.
+        Installed a configuration file to #{config_file}
+        using a source token ending with '#{source_token[-4..-1]}'.
+
       EOF
 
-      puts <<~EOF
-        Visit logtail.com/help if you are experiencing installation issues.
-      EOF
+      puts info
     end
   end
 end
