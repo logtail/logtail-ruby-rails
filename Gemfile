@@ -1,12 +1,3 @@
 source 'https://rubygems.org'
 
-gem 'rails', '~> 6.0.0'
-
-gem 'logtail'
-gem 'logtail-rack'
-
-if RUBY_PLATFORM == "java"
-  gem 'mime-types', '2.6.2'
-end
-
 gemspec
