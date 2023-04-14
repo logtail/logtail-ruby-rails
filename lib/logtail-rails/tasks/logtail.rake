@@ -47,7 +47,7 @@ namespace :logtail do
 
     if source_token.nil?
       puts <<~EOF
-        Installed a configuration file with token placeholder to #{config_file}.
+        Installed a configuration file with a token placeholder to #{config_file}.
 
       EOF
 
