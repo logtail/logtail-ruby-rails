@@ -15,7 +15,7 @@ begin
 
   # Instead of patching the class we're pulling the code from Rails master. This brings in
   # a number of improvements while also addressing the issue above.
-  if ActiveSupport::TaggedLogging.instance_of?(Class) && Rails::VERSION::MAJOR <= 6
+  if ActiveSupport::TaggedLogging.instance_of?(Class)
     ActiveSupport.send(:remove_const, :TaggedLogging)
 
     require "active_support/core_ext/module/delegation"
