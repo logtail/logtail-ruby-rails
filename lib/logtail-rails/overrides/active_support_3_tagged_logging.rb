@@ -1,6 +1,6 @@
 # Please note, this patch is merely an upgrade, backporting improved tagged logging code
 # from newer versions of Rails:
-# https://github.com/rails/rails/blob/5-1-stable/activesupport/lib/active_support/tagged_logging.rb
+# https://github.com/rails/rails/blob/7-0-stable/activesupport/lib/active_support/tagged_logging.rb
 # The behavior of tagged logging will not change in any way.
 #
 # This patch is specifically for Rails 3. The legacy approach to wrapping the logger in
@@ -15,20 +15,30 @@ begin
 
   # Instead of patching the class we're pulling the code from Rails master. This brings in
   # a number of improvements while also addressing the issue above.
-  if ActiveSupport::TaggedLogging.instance_of?(Class) && Rails::VERSION::MAJOR <= 3
+  if ActiveSupport::TaggedLogging.instance_of?(Class) && Rails::VERSION::MAJOR <= 6
     ActiveSupport.send(:remove_const, :TaggedLogging)
 
     require "active_support/core_ext/module/delegation"
     require "active_support/core_ext/object/blank"
     require "logger"
+    require "active_support/logger"
 
     module ActiveSupport
       # Wraps any standard Logger object to provide tagging capabilities.
+      #
+      # May be called with a block:
       #
       #   logger = ActiveSupport::TaggedLogging.new(Logger.new(STDOUT))
       #   logger.tagged('BCX') { logger.info 'Stuff' }                            # Logs "[BCX] Stuff"
       #   logger.tagged('BCX', "Jason") { logger.info 'Stuff' }                   # Logs "[BCX] [Jason] Stuff"
       #   logger.tagged('BCX') { logger.tagged('Jason') { logger.info 'Stuff' } } # Logs "[BCX] [Jason] Stuff"
+      #
+      # If called without a block, a new logger will be returned with applied tags:
+      #
+      #   logger = ActiveSupport::TaggedLogging.new(Logger.new(STDOUT))
+      #   logger.tagged("BCX").info "Stuff"                 # Logs "[BCX] Stuff"
+      #   logger.tagged("BCX", "Jason").info "Stuff"        # Logs "[BCX] [Jason] Stuff"
+      #   logger.tagged("BCX").tagged("Jason").info "Stuff" # Logs "[BCX] [Jason] Stuff"
       #
       # This is used by the default Rails.logger as configured by Railties to make
       # it easy to stamp log lines with subdomains, request ids, and anything else
@@ -48,9 +58,10 @@ begin
           end
 
           def push_tags(*tags)
-            tags.flatten.reject(&:blank?).tap do |new_tags|
-              current_tags.concat new_tags
-            end
+            tags.flatten!
+            tags.reject!(&:blank?)
+            current_tags.concat tags
+            tags
           end
 
           def pop_tags(size = 1)
@@ -63,40 +74,53 @@ begin
 
           def current_tags
             # We use our object ID here to avoid conflicting with other instances
-            thread_key = @thread_key ||= "activesupport_tagged_logging_tags:#{object_id}".freeze
-            Thread.current[thread_key] ||= []
+            thread_key = @thread_key ||= "activesupport_tagged_logging_tags:#{object_id}"
+            IsolatedExecutionState[thread_key] ||= []
           end
 
           def tags_text
             tags = current_tags
-            if tags.any?
+            if tags.one?
+              "[#{tags[0]}] "
+            elsif tags.any?
               tags.collect { |tag| "[#{tag}] " }.join
             end
           end
         end
 
-        # Simple formatter which only displays the message.
-        class SimpleFormatter < ::Logger::Formatter
-          # This method is invoked when a log event occurs
-          def call(severity, timestamp, progname, msg)
-            "#{String === msg ? msg : msg.inspect}\n"
+        module LocalTagStorage # :nodoc:
+          attr_accessor :current_tags
+
+          def self.extended(base)
+            base.current_tags = []
           end
         end
 
         def self.new(logger)
-          if logger.respond_to?(:formatter=) && logger.respond_to?(:formatter)
+          logger = logger.clone
+
+          if logger.formatter
+            logger.formatter = logger.formatter.dup
+          else
             # Ensure we set a default formatter so we aren't extending nil!
-            logger.formatter ||= SimpleFormatter.new
-            logger.formatter.extend Formatter
+            logger.formatter = ActiveSupport::Logger::SimpleFormatter.new
           end
 
+          logger.formatter.extend Formatter
           logger.extend(self)
         end
 
         delegate :push_tags, :pop_tags, :clear_tags!, to: :formatter
 
         def tagged(*tags)
-          formatter.tagged(*tags) { yield self }
+          if block_given?
+            formatter.tagged(*tags) { yield self }
+          else
+            logger = ActiveSupport::TaggedLogging.new(self)
+            logger.formatter.extend LocalTagStorage
+            logger.push_tags(*formatter.current_tags, *tags)
+            logger
+          end
         end
 
         def flush
@@ -106,6 +130,4 @@ begin
       end
     end
   end
-
-rescue Exception
 end
