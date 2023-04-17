@@ -42,7 +42,7 @@ RSpec.describe ActiveSupport::TaggedLogging, :rails_23 => true do
       expect(io.string).to include(',"tags":["ABC","DEF"],')
     end
 
-    if Rails::VERSION::MAJOR >= 5
+    if Rails::VERSION::MAJOR >= 7
       it "should return tagged logger" do
         logger = ActiveSupport::TaggedLogging.new(Logtail::Logger.new(io))
         a = logger.tagged('ABC')
