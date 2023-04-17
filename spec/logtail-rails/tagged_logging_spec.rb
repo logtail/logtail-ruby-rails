@@ -42,12 +42,14 @@ RSpec.describe ActiveSupport::TaggedLogging, :rails_23 => true do
       expect(io.string).to include(',"tags":["ABC","DEF"],')
     end
 
-    it "should return tagged logger" do
-      logger = ActiveSupport::TaggedLogging.new(Logtail::Logger.new(io))
-      a = logger.tagged('ABC')
-      b = a.tagged('DEF')
-      b.info('tagged log')
-      expect(io.string).to include(',"tags":["ABC","DEF"],')
+    if Rails::VERSION::MAJOR >= 5
+      it "should return tagged logger" do
+        logger = ActiveSupport::TaggedLogging.new(Logtail::Logger.new(io))
+        a = logger.tagged('ABC')
+        b = a.tagged('DEF')
+        b.info('tagged log')
+        expect(io.string).to include(',"tags":["ABC","DEF"],')
+      end
     end
   end
 end
