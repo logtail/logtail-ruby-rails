@@ -2,20 +2,21 @@ namespace :logtail do
   desc 'Install a default config/initializers/logtail.rb file'
 
   PLACEHOLDER = '<SOURCE_TOKEN>'.freeze
-  def content(source_token = nil)
-    <<~RUBY
-      Rails.application.configure do
-        if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
-          http_device = Logtail::LogDevices::HTTP.new('#{source_token || PLACEHOLDER}')
-          config.logger = Logtail::Logger.new(http_device)
-        else
-          config.logger = Logtail::Logger.new(STDOUT)
-        end
-      end
-    RUBY
-  end
 
   task install: :environment do
+    def content(source_token = nil)
+      <<~RUBY
+        Rails.application.configure do
+          if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
+            http_device = Logtail::LogDevices::HTTP.new('#{source_token || PLACEHOLDER}')
+            config.logger = Logtail::Logger.new(http_device)
+          else
+            config.logger = Logtail::Logger.new(STDOUT)
+          end
+        end
+      RUBY
+    end
+
     quiet = ENV['quiet']
     force = ENV['force']
     source_token = ENV['source_token']
