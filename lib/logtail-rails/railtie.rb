@@ -19,7 +19,6 @@ module Logtail
 
         # Must be loaded after initializers so that we respect any Logtail configuration set
         initializer(:logtail, before: :build_middleware_stack, after: :load_config_initializers) do
-          puts "HI IM INTEGRATING STUFF"
           Integrations::Rails.integrate!
 
           # Install the Rack middlewares so that we capture structured data instead of

@@ -15,11 +15,6 @@ module Logtail
     elsif defined?(::LoggerSilence)
       include ::LoggerSilence
     end
-
-    def initialize(logdev, shift_age = nil, shift_size = nil, level: nil, progname: nil, formatter: nil, datetime_format: nil, shift_period_suffix: nil)
-      #super
-      puts "IM INITIALIZING LOGGER, WHICH MIGHT BE IMPORTANT LATER"
-    end
   end
 end
 
