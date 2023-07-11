@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Logtail"]
   spec.email = ["hello@betterstack.com"]
 
-  spec.summary = %q{Better Stack Logs Rails integration}
+  spec.summary = %q{Better Stack Rails integration}
   spec.homepage = "https://github.com/logtail/logtail-ruby-rails"
   spec.license = "ISC"
 
