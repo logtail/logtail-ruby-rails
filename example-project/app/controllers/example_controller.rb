@@ -21,7 +21,7 @@ class ExampleController < ApplicationController
         Rails.logger.error("Oops! Something went wrong.")
 
         # Send messages about fatal events thet caused the app to crash using the fatal() method
-        Rails.logger.fatal("Application crashed! Needs to be fixed ASP!")
+        Rails.logger.fatal("Application crashed! Needs to be fixed ASAP!")
 
         # You can also provide additional information when logging
         Rails.logger.warn("log structured data",
