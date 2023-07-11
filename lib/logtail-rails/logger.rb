@@ -24,7 +24,9 @@ module Logtail
         logger = Logtail::Logger.new(STDOUT)
       end
 
-      ::ActiveSupport::TaggedLogging.new(logger) if defined?(::ActiveSupport::TaggedLogging)
+      logger = ::ActiveSupport::TaggedLogging.new(logger) if defined?(::ActiveSupport::TaggedLogging)
+
+      logger
     end
   end
 end
