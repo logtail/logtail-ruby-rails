@@ -1,0 +1,19 @@
+source 'https://rubygems.org'
+
+ruby '>= 2.7.0'
+
+gem 'rails', '>= 6.1.4.2'
+
+gem 'logtail-rails'
+
+# Sprockets are no longer bundled with Rails 7
+gem 'sprockets-rails'
+
+# Use Puma as the app server
+gem 'puma', '>= 6.1.1'
+
+# Use SQLite as database
+gem 'sqlite3'
+
+# Reduces boot times through caching; required in config/boot.rb
+gem 'bootsnap', '>= 1.4.4', require: false

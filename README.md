@@ -17,7 +17,8 @@ Collect logs directly from your Ruby on Rails projects. To start logging Ruby pr
 - Performant, light weight, with a thoughtful design.
 
 ### Supported language versions
-- Ruby 2.7.0 or newer Rails 6.1.4.2 or newer
+- Ruby 2.7.0 or newer
+- Rails 6.1.4.2 or newer
 
 # Installation
 Install the Logtail Ruby on Rails client library, run the following command:
