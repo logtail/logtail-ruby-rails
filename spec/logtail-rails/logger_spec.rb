@@ -20,7 +20,7 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
     end
 
     it "should filter sensitive parameters by default" do
-      skip("ParameterFilter is supported in Rails 6.0 and higher") if Rails::VERSION::STRING <= "6.0"
+      skip("ParameterFilter is supported in Rails 6.0 and higher") if Rails::VERSION::STRING < "6.0"
 
       Rails.application.config.filter_parameters = [:secret]
 
