@@ -16,17 +16,22 @@ module Logtail
       include ::LoggerSilence
     end
 
-    def self.create_default_logger(source_token)
-      if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
-        http_device = Logtail::LogDevices::HTTP.new(source_token)
-        logger = Logtail::Logger.new(http_device)
-      else
-        logger = Logtail::Logger.new(STDOUT)
-      end
+    def self.create_logger(*io_devices_and_loggers)
+      logger = Logtail::Logger.new(*io_devices_and_loggers)
 
       logger = ::ActiveSupport::TaggedLogging.new(logger) if defined?(::ActiveSupport::TaggedLogging)
 
       logger
+    end
+
+    def self.create_default_logger(source_token)
+      if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
+        io_device = Logtail::LogDevices::HTTP.new(source_token)
+      else
+        io_device = STDOUT
+      end
+
+      self.create_logger(io_device)
     end
   end
 end
