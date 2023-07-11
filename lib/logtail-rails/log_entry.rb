@@ -4,6 +4,7 @@ module Logtail
 
     def to_hash(options = {})
       hash = to_hash_unfiltered(options)
+      return hash unless defined?(ActiveSupport::ParameterFilter)
 
       parameter_filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
 
