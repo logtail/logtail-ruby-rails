@@ -23,7 +23,7 @@ require "logtail-rails/action_view"
 require "logtail-rails/active_record"
 
 require "logtail-rails/logger"
-
+puts "HELLO IM DOING SOMETHING"
 module Logtail
   module Integrations
     # Module for holding *all* Rails integrations. This module does *not*
