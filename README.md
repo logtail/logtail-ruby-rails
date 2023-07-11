@@ -94,4 +94,4 @@ Learn how to setup Ruby logging by exploring the workings of the [example projec
  
 ## Get in touch
 
-Have any questions? Please explore the Better Stack Logs [documentation](https://betterstack.com/docs/logs/) or contact our [support](https://betterstack.com/help).
+Have any questions? Please explore the Better Stack [documentation](https://betterstack.com/docs/logs/) or contact our [support](https://betterstack.com/help).
