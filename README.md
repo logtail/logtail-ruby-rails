@@ -29,6 +29,22 @@ bundle add logtail-rails
 
 Alternatively, add `gem "logtail-rails"` to your `Gemfile` manually and then run `bundle install`.
 
+Then add following configuration line into your `config/application.rb`:
+
+```ruby
+module YourProject
+  class Application < Rails::Application
+    # ...
+    # configuration of your project
+    # ...
+
+    config.logger = Logtail::Logger.create_default_logger("<SOURCE_TOKEN>")
+  end
+end
+```
+
+*Don't forget to replace `<SOURCE_TOKEN>` with your actual source token which you can find by going to logtail.com -> sources -> edit.*
+
 ---
 
 # Example project
@@ -45,13 +61,11 @@ bundle install
 
 This will install all dependencies listed in the `Gemfile.lock` file.
 
-Then run the following command to modify the default config file:
+Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to logtail.com -> sources -> edit.
 
-```bash
-bundle exec rake logtail:install force=true source_token=SOURCE_TOKEN
+```ruby
+config.logger = Logtail::Logger.create_default_logger("<YOUR_ACTUAL_SOURCE_TOKEN>")
 ```
-
-*Don't forget to replace `SOURCE_TOKEN` with your actual source token which you can find by going to logtail.com -> sources -> edit.  This will generate config/initializers/logtail.rb.*
 
  ## Run the example project
  

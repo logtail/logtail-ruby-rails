@@ -23,6 +23,11 @@ class ExampleController < ApplicationController
         # Send messages about fatal events thet caused the app to crash using the fatal() method
         Rails.logger.fatal("Application crashed! Needs to be fixed ASAP!")
 
+
+        # You can optionally add tags when logging
+        Rails.logger.tagged("tag1", "tag2").info("log message with tags")
+
+
         # You can also provide additional information when logging
         Rails.logger.warn("log structured data",
             name: {

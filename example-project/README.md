@@ -11,13 +11,11 @@ bundle install
 
 This will install all dependencies listed in the `Gemfile.lock` file.
 
-Then run the following command to modify the default config file:
+Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to logtail.com -> sources -> edit.
 
-```bash
-bundle exec rake logtail:install force=true source_token=SOURCE_TOKEN
+```ruby
+config.logger = Logtail::Logger.create_default_logger("<YOUR_ACTUAL_SOURCE_TOKEN>")
 ```
-
-_Don't forget to replace `SOURCE_TOKEN` with your actual source token which you can find by going to logtail.com -> sources -> edit. This will generate config/initializers/logtail.rb._
 
 ## Run the example project
  
