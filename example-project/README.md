@@ -11,9 +11,17 @@ bundle install
 
 This will install all dependencies listed in the `Gemfile.lock` file.
 
- ## Run the example project
+Then run the following command to modify the default config file:
+
+```bash
+bundle exec rake logtail:install force=true source_token=SOURCE_TOKEN
+```
+
+_Don't forget to replace `SOURCE_TOKEN` with your actual source token which you can find by going to logtail.com -> sources -> edit. This will generate config/initializers/logtail.rb._
+
+## Run the example project
  
- To run the example application, run the following command:
+To run the example application, run the following command:
 
 ```bash
 rails server
@@ -68,7 +76,7 @@ This will create the following output:
             "frame_label": "<main>"
         },
         "system": {
-            "hostname": "hostname"
+            "hostname": "hostname",
             "pid": 1234
         }
     }
@@ -87,7 +95,7 @@ This will create the following output:
             "frame_label": "<main>"
         },
         "system": {
-            "hostname": "hostname"
+            "hostname": "hostname",
             "pid": 1234
         }
     }
@@ -130,7 +138,7 @@ This will create the following output:
             "frame_label": "<main>"
         },
         "system": {
-            "hostname": "hostname"
+            "hostname": "hostname",
             "pid": 1234
         }
     }
@@ -166,7 +174,7 @@ This will generate the following JSON output:
             "frame_label": "<main>"
         },
         "system": {
-            "hostname": "hostname"
+            "hostname": "hostname",
             "pid": 1234
         },
         "user": {
