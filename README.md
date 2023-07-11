@@ -8,7 +8,7 @@
 
 Collect logs directly from your Ruby on Rails projects. To start logging Ruby projects explore the [Logtail Ruby library](https://github.com/logtail/logtail-ruby).
 
-[Logtail](https://betterstack.com/logtail) is a hosted service that centralizes all of your logs into one place. Allowing for analysis, correlation and filtering with SQL. Actionable Grafana dashboards and collaboration come built-in. Logtail works with [any language or platform and any data source](https://docs.logtail.com/). 
+[Logtail](https://betterstack.com/logtail) is a hosted service that centralizes all of your logs into one place. Allowing for analysis, correlation and filtering with SQL. Actionable Grafana dashboards and collaboration come built-in. Logtail works with [any language or platform and any data source](https://betterstack.com/docs/logs/). 
 
 ### Features
 - Simple integration.
@@ -43,7 +43,7 @@ module YourProject
 end
 ```
 
-*Don't forget to replace `<SOURCE_TOKEN>` with your actual source token which you can find by going to logtail.com -> sources -> edit.*
+*Don't forget to replace `<SOURCE_TOKEN>` with your actual source token which you can find by going to [Better Stack Logs](https://logs.betterstack.com/dashboard) -> Source -> Edit.*
 
 ---
 
@@ -61,7 +61,7 @@ bundle install
 
 This will install all dependencies listed in the `Gemfile.lock` file.
 
-Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to logtail.com -> sources -> edit.
+Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to [Better Stack Logs](https://logs.betterstack.com/dashboard) -> Source -> Edit.
 
 ```ruby
 config.logger = Logtail::Logger.create_default_logger("<YOUR_ACTUAL_SOURCE_TOKEN>")
@@ -94,4 +94,4 @@ Learn how to setup Ruby logging by exploring the workings of the [example projec
  
 ## Get in touch
 
-Have any questions? Please explore the Logtail [documentation](https://docs.logtail.com/) or contact our [support](https://betterstack.com/help).
+Have any questions? Please explore the Better Stack Logs [documentation](https://betterstack.com/docs/logs/) or contact our [support](https://betterstack.com/help).

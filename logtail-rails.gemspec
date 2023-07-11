@@ -6,9 +6,9 @@ Gem::Specification.new do |spec|
   spec.name = "logtail-rails"
   spec.version = Logtail::Integrations::Rails::VERSION
   spec.authors = ["Logtail"]
-  spec.email = ["hi@logtail.com"]
+  spec.email = ["hello@betterstack.com"]
 
-  spec.summary = %q{Logtail.com Rails integration}
+  spec.summary = %q{Better Stack Logs Rails integration}
   spec.homepage = "https://github.com/logtail/logtail-ruby-rails"
   spec.license = "ISC"
 

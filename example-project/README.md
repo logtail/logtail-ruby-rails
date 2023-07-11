@@ -11,7 +11,7 @@ bundle install
 
 This will install all dependencies listed in the `Gemfile.lock` file.
 
-Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to logtail.com -> sources -> edit.
+Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to [Better Stack Logs](https://logs.betterstack.com/dashboard) -> Source -> Edit.
 
 ```ruby
 config.logger = Logtail::Logger.create_default_logger("<YOUR_ACTUAL_SOURCE_TOKEN>")
