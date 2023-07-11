@@ -14,6 +14,8 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
     end
 
     it "should support tags by default" do
+      skip("TaggedLogging is supported in Rails 6.1 and higher") if Rails::VERSION::STRING <= "6.1"
+
       logger.tagged("tag1", "tag2").info("test")
 
       expect(io.string).to include(',"tags":["tag1","tag2"],')

@@ -19,7 +19,8 @@ module Logtail
     def self.create_logger(*io_devices_and_loggers)
       logger = Logtail::Logger.new(*io_devices_and_loggers)
 
-      logger = ::ActiveSupport::TaggedLogging.new(logger) if defined?(::ActiveSupport::TaggedLogging)
+      tagged_logging_supported = Rails::VERSION::MAJOR >= 7 || Rails::VERSION::MAJOR == 6 && Rails::VERSION::MINOR >= 1
+      logger = ::ActiveSupport::TaggedLogging.new(logger) if tagged_logging_supported
 
       logger
     end
