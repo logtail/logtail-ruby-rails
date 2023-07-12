@@ -22,6 +22,7 @@ require "logtail-rails/action_dispatch"
 require "logtail-rails/action_view"
 require "logtail-rails/active_record"
 
+require "logtail-rails/log_entry"
 require "logtail-rails/logger"
 
 module Logtail
@@ -65,4 +66,3 @@ module Logtail
     end
   end
 end
-
