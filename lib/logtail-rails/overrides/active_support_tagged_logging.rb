@@ -1,10 +1,9 @@
 # This is an override instead of an integration because without this Logtail would not
 # work properly if ActiveSupport::TaggedLogging is used.
-#
-# This is called after 'active_support_3_tagged_logging' where the constant is loaded and
-# replaced. I want to make sure we don't attempt to load it again undoing the patches
-# applied there.
-if defined?(ActiveSupport::TaggedLogging)
+
+begin
+  require "active_support/tagged_logging"
+
   module Logtail
     module Overrides
       # @private
@@ -63,4 +62,6 @@ if defined?(ActiveSupport::TaggedLogging)
       end
     end
   end
+
+rescue Exception
 end

@@ -1,5 +1,4 @@
 # The order is relevant
-require "logtail-rails/overrides/active_support_3_tagged_logging"
 require "logtail-rails/overrides/active_support_tagged_logging"
 require "logtail-rails/overrides/active_support_buffered_logger"
 require "logtail-rails/overrides/lograge"
