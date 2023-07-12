@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'rack', git: 'https://github.com/rack/rack', branch: 'main'
+# rack 3.0 was released, which us not yet supported in logtail-rack
+# gem 'rack', git: 'https://github.com/rack/rack', branch: 'main'
 gem 'arel', git: 'https://github.com/rails/arel', branch: 'master'
 gem 'rails', git: 'https://github.com/rails/rails', branch: 'main'
 
