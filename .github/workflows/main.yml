@@ -22,6 +22,7 @@ jobs:
           - 2.7.2
           - 2.6.6
           - 2.5.8
+          - jruby-9.4.3.0
           - jruby-9.2.14.0
           - truffleruby-21.0.0
         gemfile:
@@ -47,6 +48,8 @@ jobs:
             ruby-version: 3.1.4
           - gemfile: rails-5.2
             ruby-version: 3.0.6
+          - gemfile: rails-5.2
+            ruby-version: jruby-9.4.3.0
 
           - gemfile: rails-5.1
             ruby-version: 3.2.2
@@ -54,6 +57,8 @@ jobs:
             ruby-version: 3.1.4
           - gemfile: rails-5.1
             ruby-version: 3.0.6
+          - gemfile: rails-5.1
+            ruby-version: jruby-9.4.3.0
 
           - gemfile: rails-5.0
             ruby-version: 3.2.2
@@ -61,6 +66,8 @@ jobs:
             ruby-version: 3.1.4
           - gemfile: rails-5.0
             ruby-version: 3.0.6
+          - gemfile: rails-5.0
+            ruby-version: jruby-9.4.3.0
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
