@@ -6,10 +6,6 @@ module Logtail
       # Installs Logtail into your Rails app automatically.
       class Railtie < ::Rails::Railtie
         railtie_name 'logtail-rails'
-        rake_tasks do
-          path = File.expand_path(__dir__)
-          load "#{path}/tasks/logtail.rake"
-        end
 
         config.logtail = Config.instance
 
