@@ -3,7 +3,7 @@
   [![Logtail ruby dashboard](https://user-images.githubusercontent.com/19272921/154085622-59997d5a-3f91-4bc9-a815-3b8ead16d28d.jpeg)](https://betterstack.com/logtail)
 
 [![ISC License](https://img.shields.io/badge/license-ISC-ff69b4.svg)](LICENSE.md)
-[![Gem Version](https://badge.fury.io/rb/logtail-ruby.svg)](https://badge.fury.io/rb/logtail-ruby)
+[![Gem Version](https://badge.fury.io/rb/logtail-rails.svg)](https://badge.fury.io/rb/logtail-rails)
 [![Build Status](https://github.com/logtail/logtail-ruby-rails/workflows/build/badge.svg)](https://github.com/logtail/logtail-ruby-rails/actions?query=workflow%3Abuild)
 
 Collect logs directly from your Ruby on Rails projects. To start logging Ruby projects explore the [Logtail Ruby library](https://github.com/logtail/logtail-ruby).
