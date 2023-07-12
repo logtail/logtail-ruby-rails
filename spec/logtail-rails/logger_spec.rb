@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Logtail::Logger, :rails_23 => true do
   describe "#silence" do
     let(:io) { StringIO.new }
-    let(:logger) { Logtail::Logger.new(io) }
+    let(:logger) { Logtail::Logger.create_logger(io) }
 
     it "should silence the logs" do
       logger.silence do
@@ -11,6 +11,14 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
       end
 
       expect(io.string).to eq("")
+    end
+
+    it "should support tags by default" do
+      skip("TaggedLogging is supported in Rails 6.1 and higher") if Rails::VERSION::STRING < "6.1"
+
+      logger.tagged("tag1", "tag2").info("test")
+
+      expect(io.string).to include(',"tags":["tag1","tag2"],')
     end
 
     it "should support formatted data" do
