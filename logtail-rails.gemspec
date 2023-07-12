@@ -5,14 +5,14 @@ require "logtail-rails/version"
 Gem::Specification.new do |spec|
   spec.name = "logtail-rails"
   spec.version = Logtail::Integrations::Rails::VERSION
-  spec.authors = ["Logtail"]
+  spec.authors = ["Better Stack"]
   spec.email = ["hello@betterstack.com"]
 
   spec.summary = %q{Better Stack Rails integration}
   spec.homepage = "https://github.com/logtail/logtail-ruby-rails"
   spec.license = "ISC"
 
-  spec.required_ruby_version = '>= 2.2.0'
+  spec.required_ruby_version = '>= 2.5.0'
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/logtail/logtail-ruby-rails"
@@ -30,9 +30,9 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "logtail", "~> 0.1"
   spec.add_runtime_dependency "logtail-rack", "~> 0.1"
 
-  spec.add_runtime_dependency 'activerecord', '>= 3.0.0'
-  spec.add_runtime_dependency 'railties', '>= 3.0.0'
-  spec.add_runtime_dependency 'actionpack', '>= 3.0.0'
+  spec.add_runtime_dependency 'activerecord', '>= 5.0.0'
+  spec.add_runtime_dependency 'railties', '>= 5.0.0'
+  spec.add_runtime_dependency 'actionpack', '>= 5.0.0'
 
   spec.add_development_dependency "bundler", ">= 0.0"
 
