@@ -16,11 +16,21 @@ jobs:
 
       matrix:
         ruby-version:
-          - truffleruby-20.3.3
+          - truffleruby-19.3.0
+          - truffleruby-19.3.1
+          - truffleruby-20.0.0
+          - truffleruby-20.1.0
+          - truffleruby-20.2.0
+          - truffleruby-20.3.0
           - truffleruby-21.0.0
-          - truffleruby-21.0.0.2
+          - truffleruby-21.1.0
+          - truffleruby-21.2.0
+          - truffleruby-21.2.0.1
           - truffleruby-21.3.0
           - truffleruby-22.0.0.2
+          - truffleruby-22.1.0
+          - truffleruby-22.2.0
+          - truffleruby-22.3.0
           - truffleruby-22.3.1
           - truffleruby-23.0.0
         gemfile:
