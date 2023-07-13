@@ -34,7 +34,12 @@ module Logtail
 
       logger = self.create_logger(io_device)
 
-      Sidekiq.configure_server { |config| config.logger = logger } if defined?(Sidekiq)
+      if defined?(Sidekiq)
+        Sidekiq.configure_server do |config|
+          logger = self.create_logger(io_device, config.logger) if config.logger.class == Sidekiq::Logger
+          config.logger = logger
+        end
+      end
 
       logger
     end
