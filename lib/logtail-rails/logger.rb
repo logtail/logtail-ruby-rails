@@ -32,7 +32,11 @@ module Logtail
         io_device = STDOUT
       end
 
-      self.create_logger(io_device)
+      logger = self.create_logger(io_device)
+
+      Sidekiq.configure_server { |config| config.logger = logger } if defined?(Sidekiq)
+
+      logger
     end
   end
 end
