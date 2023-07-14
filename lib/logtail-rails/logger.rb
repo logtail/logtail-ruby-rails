@@ -32,7 +32,16 @@ module Logtail
         io_device = STDOUT
       end
 
-      self.create_logger(io_device)
+      logger = self.create_logger(io_device)
+
+      if defined?(Sidekiq)
+        Sidekiq.configure_server do |config|
+          logger = self.create_logger(io_device, config.logger) if config.logger.class == Sidekiq::Logger
+          config.logger = logger
+        end
+      end
+
+      logger
     end
   end
 end

@@ -21,6 +21,7 @@ require "logtail-rails/action_controller"
 require "logtail-rails/action_dispatch"
 require "logtail-rails/action_view"
 require "logtail-rails/active_record"
+require "logtail-rails/sidekiq"
 
 require "logtail-rails/log_entry"
 require "logtail-rails/logger"
