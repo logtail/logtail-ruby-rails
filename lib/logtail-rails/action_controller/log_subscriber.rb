@@ -8,6 +8,7 @@ module Logtail
       class LogSubscriber < Integrator
         def initialize
           require "action_controller"
+          require "action_controller/log_subscriber"
           require "logtail-rails/action_controller/log_subscriber/logtail_log_subscriber"
         rescue LoadError => e
           raise RequirementNotMetError.new(e.message)
