@@ -2,8 +2,8 @@ source 'https://rubygems.org'
 
 gem 'rails', github: 'rails/rails', branch: 'main'
 
-gem 'logtail', github: 'logtail/logtail-ruby', branch: 'ph/support-rails-7-1-tags'
-gem 'logtail-rack', github: 'logtail/logtail-ruby-rack', branch: 'ph/support-rack-v3'
+gem 'logtail'
+gem 'logtail-rack'
 
 if RUBY_PLATFORM == "java"
   gem 'mime-types', '2.6.2'
