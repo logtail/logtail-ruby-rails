@@ -70,7 +70,7 @@ module Logtail
           def self.attach_to(*)
             super
 
-            if Rails::VERSION::MAJOR >= 7 && Rails::VERSION::MINOR >= 1
+            if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
               # Clean extra listeners subscribed in parent's attach_to method
               ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
                 .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
