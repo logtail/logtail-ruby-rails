@@ -66,6 +66,16 @@ module Logtail
             end
           end
 
+          def self.attach_to(*)
+            super
+
+            # Clean extra listeners subscribed in parent's attach_to method
+            ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
+              .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
+              .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
+              .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
+          end
+
           private
           def log_rendering_start(*args)
             # Consolidates 2 template rendering events into 1. We don't need 2 events for
