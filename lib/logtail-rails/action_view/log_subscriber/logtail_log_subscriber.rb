@@ -25,6 +25,7 @@ module Logtail
               )
             end
           end
+          subscribe_log_level :render_template, :info
 
           def render_partial(event)
             return true if silence?
