@@ -40,7 +40,11 @@ jobs:
           - gemfile: rails-edge
             ruby-version: 2.5.8
           - gemfile: rails-edge
+            ruby-version: jruby-9.4.3.0
+          - gemfile: rails-edge
             ruby-version: jruby-9.2.14.0
+          - gemfile: rails-edge
+            ruby-version: truffleruby-23.0.0
 
           - gemfile: rails-7.0
             ruby-version: 2.6.6
