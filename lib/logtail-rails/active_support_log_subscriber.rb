@@ -18,6 +18,11 @@ module Logtail
         # I don't know why this has to be so complicated, but it is. This code was taken from
         # lograge :/
         def unsubscribe!(component, type)
+          if defined?(type.detach_from)
+            type.detach_from(component)
+            return
+          end
+
           subscriber = find(component, type)
 
           if !subscriber
