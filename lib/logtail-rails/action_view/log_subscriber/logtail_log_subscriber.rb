@@ -25,6 +25,7 @@ module Logtail
               )
             end
           end
+          subscribe_log_level :render_template, :info if defined?(subscribe_log_level)
 
           def render_partial(event)
             return true if silence?
@@ -63,6 +64,18 @@ module Logtail
             else
               # Older versions of rails delegate this method to #render_template
               render_template(event)
+            end
+          end
+
+          def self.attach_to(*)
+            super
+
+            if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
+              # Clean extra listeners subscribed in parent's attach_to method
+              ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
+                .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
+                .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
+                .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
             end
           end
 
