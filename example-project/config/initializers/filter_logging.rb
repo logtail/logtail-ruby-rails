@@ -6,3 +6,6 @@
 Rails.application.config.filter_parameters += [
   :passw, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn
 ]
+
+# Configure HTTP headers to be filtered from the log. Use this to limit dissemination of sensitive information.
+Logtail::Integrations::Rack::HTTPEvents.http_header_filters = [:authentication, :cookie]
