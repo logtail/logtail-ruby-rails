@@ -8,4 +8,6 @@ Rails.application.config.filter_parameters += [
 ]
 
 # Configure HTTP headers to be filtered from the log. Use this to limit dissemination of sensitive information.
-Logtail::Integrations::Rack::HTTPEvents.http_header_filters = [:authentication, :cookie]
+Logtail::Integrations::Rack::HTTPEvents.http_header_filters = [
+  :authorization, :proxy_authorization, :cookie
+]
