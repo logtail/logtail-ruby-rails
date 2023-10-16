@@ -4,7 +4,7 @@
 
 [![ISC License](https://img.shields.io/badge/license-ISC-ff69b4.svg)](LICENSE.md)
 [![Gem Version](https://badge.fury.io/rb/logtail-rails.svg)](https://badge.fury.io/rb/logtail-rails)
-[![Build Status](https://github.com/logtail/logtail-ruby-rails/workflows/build/badge.svg)](https://github.com/logtail/logtail-ruby-rails/actions?query=workflow%3Abuild)
+[![Build Status](https://github.com/logtail/logtail-ruby-rails/actions/workflows/main.yml/badge.svg)](https://github.com/logtail/logtail-ruby-rails/actions/workflows/main.yml)
 
 Collect logs directly from your Ruby on Rails projects. To start logging Ruby projects explore the [Logtail Ruby library](https://github.com/logtail/logtail-ruby).
 
