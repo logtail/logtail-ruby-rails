@@ -51,6 +51,8 @@ jobs:
           - gemfile: rails-7.1
             ruby-version: 2.5
           - gemfile: rails-7.1
+            ruby-version: jruby-9.4.3.0
+          - gemfile: rails-7.1
             ruby-version: jruby-9.2.14.0
 
           - gemfile: rails-7.0
