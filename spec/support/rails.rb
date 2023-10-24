@@ -1,7 +1,7 @@
 require "rails"
 require "logtail-rails/railtie"
 
-# Defualt the rails logger to nothing, each test shoould be
+# Default the rails logger to nothing, each test should be
 # responsible for setting up the logger
 logger = Logtail::Logger.new(nil) # change to STDOUT to see rails logs
 Rails.logger = logger
