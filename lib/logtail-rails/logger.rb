@@ -16,6 +16,35 @@ module Logtail
       include ::LoggerSilence
     end
 
+    # Logtail::Logger also works as ActiveSupport::BroadcastLogger
+    def is_a?(clazz)
+      return true if clazz == ::ActiveSupport::BroadcastLogger
+
+      super(clazz)
+    end
+
+    def broadcasts
+      [self] + @extra_loggers
+    end
+
+    def broadcast_to(*io_devices_and_loggers)
+      io_devices_and_loggers.each do |io_device_or_logger|
+        extra_logger = is_a_logger?(io_device_or_logger) ? io_device_or_logger : self.class.new(io_device_or_logger)
+
+        @extra_loggers << extra_logger
+      end
+    end
+
+    def stop_broadcasting_to(io_device_or_logger)
+      if is_a_logger?(io_device_or_logger)
+        @extra_loggers.delete(logger)
+
+        return
+      end
+
+      @extra_loggers = @extra_loggers.reject { |logger| ::ActiveSupport::Logger.logger_outputs_to?(logger, io_device_or_logger) }
+    end
+
     def self.create_logger(*io_devices_and_loggers)
       logger = Logtail::Logger.new(*io_devices_and_loggers)
 
