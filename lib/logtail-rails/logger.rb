@@ -18,7 +18,7 @@ module Logtail
 
     # Logtail::Logger also works as ActiveSupport::BroadcastLogger
     def is_a?(clazz)
-      return true if clazz == ::ActiveSupport::BroadcastLogger
+      return true if defined?(::ActiveSupport::BroadcastLogger) && clazz == ::ActiveSupport::BroadcastLogger
 
       super(clazz)
     end
