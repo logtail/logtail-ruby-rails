@@ -17,11 +17,12 @@ module Logtail
     end
 
     # Logtail::Logger also works as ActiveSupport::BroadcastLogger
-    def is_a?(clazz)
-      return true if clazz == ::ActiveSupport::BroadcastLogger
+    def kind_of?(clazz)
+      return true if defined?(::ActiveSupport::BroadcastLogger) && clazz == ::ActiveSupport::BroadcastLogger
 
       super(clazz)
     end
+    alias is_a? kind_of?
 
     def broadcasts
       [self] + @extra_loggers
