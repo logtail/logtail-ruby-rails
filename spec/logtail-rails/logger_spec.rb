@@ -43,9 +43,18 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
 
     it "should be considered a broadcast logger in Rails 7.1" do
       expect(logger.is_a?(::Logger)).to eq(true)
+      expect(logger).to be_kind_of(::Logger)
+
       expect(logger.is_a?(::Logtail::Logger)).to eq(true)
-      expect(logger.is_a?(::ActiveSupport::BroadcastLogger)).to eq(true) if Rails::VERSION::STRING >= "7.1"
+      expect(logger).to be_kind_of(::Logtail::Logger)
+
+      if Rails::VERSION::STRING >= "7.1"
+        expect(logger.is_a?(::ActiveSupport::BroadcastLogger)).to eq(true)
+        expect(logger).to be_kind_of(::ActiveSupport::BroadcastLogger)
+      end
+
       expect(logger.is_a?(::Rails::Application)).to eq(false)
+      expect(logger).to_not be_kind_of(::Rails::Application)
     end
 
     it "should be able to start and stop broadcast" do
