@@ -40,5 +40,27 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
       expect(io.string).to include(',"public_info":"public_info",')
       expect(io.string).to include(',"north_pole":{"secret":"[FILTERED]"},')
     end
+
+    it "should be considered a broadcast logger in Rails 7.1" do
+      expect(logger.is_a?(::Logger)).to eq(true)
+      expect(logger.is_a?(::Logtail::Logger)).to eq(true)
+      expect(logger.is_a?(::ActiveSupport::BroadcastLogger)).to eq(true) if Rails::VERSION::STRING >= "7.1"
+      expect(logger.is_a?(::Rails::Application)).to eq(false)
+    end
+
+    it "should be able to start and stop broadcast" do
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(false)
+      expect(logger.broadcasts.length).to eq(1)
+
+      logger.broadcast_to(STDOUT)
+
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(true)
+      expect(logger.broadcasts.length).to eq(2)
+
+      logger.stop_broadcasting_to(STDOUT)
+
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(false)
+      expect(logger.broadcasts.length).to eq(1)
+    end
   end
 end
