@@ -54,7 +54,9 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
 
       logger.broadcast_to(STDOUT)
 
-      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(true)
+      # Logger.logger_outputs_to? didn't work correctly for broadcasting loggers before, skip the assert
+      # see https://github.com/rails/rails/pull/49417/files#r1340736648
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(true) if Rails::VERSION::STRING >= "7.1"
       expect(logger.broadcasts.length).to eq(2)
 
       logger.stop_broadcasting_to(STDOUT)
