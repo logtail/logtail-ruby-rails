@@ -36,6 +36,10 @@ jobs:
           - "rails-5.0"
         exclude:
           - gemfile: "rails-edge"
+            ruby-version: "3.0"
+          - gemfile: "rails-edge"
+            ruby-version: "2.7"
+          - gemfile: "rails-edge"
             ruby-version: "2.6"
           - gemfile: "rails-edge"
             ruby-version: "2.5"
@@ -43,6 +47,8 @@ jobs:
             ruby-version: "jruby-9.4.3.0"
           - gemfile: "rails-edge"
             ruby-version: "jruby-9.2.14.0"
+          - gemfile: "rails-edge"
+            ruby-version: "truffleruby-22.1.0"
           - gemfile: "rails-edge"
             ruby-version: "truffleruby-23.0.0"
 
