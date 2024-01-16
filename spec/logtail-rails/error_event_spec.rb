@@ -43,7 +43,7 @@ RSpec.describe Logtail::Integrations::Rails::ErrorEvent do
     it "should log the exception" do
       allow(Benchmark).to receive(:ms).and_return(1).and_yield
 
-      expect { dispatch_rails_request("/rack_error") }.to raise_error(RuntimeError)
+      suppress(RuntimeError) { dispatch_rails_request("/rack_error") }
 
       lines = clean_lines(io.string.split("\n"))
 

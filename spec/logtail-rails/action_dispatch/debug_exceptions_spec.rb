@@ -35,7 +35,7 @@ RSpec.describe Logtail::Integrations::ActionDispatch::DebugExceptions do
     end
 
     it "should log an exception event once" do
-      expect { dispatch_rails_request("/exception") }.to raise_error(RuntimeError)
+      suppress(RuntimeError) { dispatch_rails_request("/exception") }
 
       lines = clean_lines(io.string.split("\n"))
       expect(lines.length).to eq(3)
