@@ -39,11 +39,11 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", ">= 0.8"
   spec.add_development_dependency "rspec", "~> 3.0"
 
-  spec.add_development_dependency("bundler-audit", ">= 0")
-  spec.add_development_dependency("rails_stdout_logging", ">= 0")
-  spec.add_development_dependency("rspec-its", ">= 0")
-  spec.add_development_dependency("timecop", ">= 0")
-  spec.add_development_dependency('webmock', '~> 2.3')
+  spec.add_development_dependency "bundler-audit", ">= 0"
+  spec.add_development_dependency "rails_stdout_logging", ">= 0"
+  spec.add_development_dependency "rspec-its", ">= 0"
+  spec.add_development_dependency "timecop", ">= 0"
+  spec.add_development_dependency "webmock", "~> 2.3"
 
   rails_version = 0
   if ENV.key?('RAILS_VERSION')
@@ -58,6 +58,6 @@ Gem::Specification.new do |spec|
   elsif rails_version >= 3 && rails_version < 6
     spec.add_development_dependency('sqlite3', '1.3.13')
   else
-    spec.add_development_dependency('sqlite3', '~> 1.4.0')
+    spec.add_development_dependency('sqlite3', '~> 1.5.0')
   end
 end

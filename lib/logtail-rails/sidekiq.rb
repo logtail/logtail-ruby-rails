@@ -1,6 +1,7 @@
 # integrates Logtail::CurrentContext with Sidekiq::Context if installed
 
 begin
+  require 'sidekiq/component'
   require 'sidekiq/job_logger'
 
   class Sidekiq::JobLogger
