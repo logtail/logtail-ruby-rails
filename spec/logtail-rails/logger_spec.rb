@@ -95,6 +95,8 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
     end
 
     it "should configure the Sidekiq server to use a logtail logger when required" do
+      skip "Skipping test because Sidekiq 7.3 is not available for Ruby #{RUBY_VERSION}" if RUBY_VERSION < '2.7.0'
+
       require 'sidekiq/testing'
       require 'sidekiq/cli'
 
