@@ -74,4 +74,35 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
       expect(logger.broadcasts.length).to eq(1)
     end
   end
+
+  describe ".create_default_logger" do
+    let(:log_double) { instance_double("Sidekiq::Logger") }
+
+    before do
+      allow(Logtail::Logger).to receive(:create_logger).and_return(log_double)
+    end
+
+    it "should return the newly created logger" do
+      res = Logtail::Logger.create_default_logger("foo")
+
+      expect(res).to eq(log_double)
+    end
+
+    it "should not load Sidekiq if it hasn't been required" do
+      Logtail::Logger.create_default_logger("foo")
+
+      expect(defined?(Sidekiq)).to be nil
+    end
+
+    it "should configure the Sidekiq server to use a logtail logger when required" do
+      skip "Skipping test because Sidekiq 7.3 is not available for Ruby #{RUBY_VERSION}" if RUBY_VERSION < '2.7.0'
+
+      require 'sidekiq/testing'
+      require 'sidekiq/cli'
+
+      Logtail::Logger.create_default_logger("foo")
+
+      expect(Sidekiq.logger).to eq(log_double)
+    end
+  end
 end

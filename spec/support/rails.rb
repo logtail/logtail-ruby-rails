@@ -17,6 +17,7 @@ class RailsApp < Rails::Application
   config.action_dispatch.show_exceptions = false
   config.active_support.deprecation = :stderr
   config.eager_load = false
+  config.hosts = nil
 end
 
 RailsApp.initialize!
