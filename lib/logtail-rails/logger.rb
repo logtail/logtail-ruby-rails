@@ -38,7 +38,7 @@ module Logtail
 
     def stop_broadcasting_to(io_device_or_logger)
       if is_a_logger?(io_device_or_logger)
-        @extra_loggers.delete(logger)
+        @extra_loggers.delete(io_device_or_logger)
 
         return
       end

@@ -73,6 +73,24 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
       expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(false)
       expect(logger.broadcasts.length).to eq(1)
     end
+
+    it "should be able to start and stop broadcast to a logger" do
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(false)
+      expect(logger.broadcasts.length).to eq(1)
+
+      additional_logger = Logger.new(STDOUT)
+      logger.broadcast_to(additional_logger)
+
+      # Logger.logger_outputs_to? didn't work correctly for broadcasting loggers before, skip the assert
+      # see https://github.com/rails/rails/pull/49417/files#r1340736648
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(true) if Rails::VERSION::STRING >= "7.1"
+      expect(logger.broadcasts.length).to eq(2)
+
+      logger.stop_broadcasting_to(additional_logger)
+
+      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(false)
+      expect(logger.broadcasts.length).to eq(1)
+    end
   end
 
   describe ".create_default_logger" do
