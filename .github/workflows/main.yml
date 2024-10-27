@@ -60,6 +60,8 @@ jobs:
           - gemfile: "rails-edge"
             ruby-version: "truffleruby-23.0.0"
 
+          - gemfile: "rails-edge"
+            ruby-version: "3.1"
           - gemfile: "rails-8.0"
             ruby-version: "3.0"
           - gemfile: "rails-8.0"
