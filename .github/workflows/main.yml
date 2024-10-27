@@ -41,6 +41,8 @@ jobs:
           - "rails-5.0"
         exclude:
           - gemfile: "rails-edge"
+            ruby-version: "3.1"
+          - gemfile: "rails-edge"
             ruby-version: "3.0"
           - gemfile: "rails-edge"
             ruby-version: "2.7"
