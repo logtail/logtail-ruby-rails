@@ -1,0 +1,10 @@
+source 'https://rubygems.org'
+
+gem 'rails', '~> 8.0.0'
+gem 'sidekiq', '>= 7.3.0', require: false
+
+gem 'logtail'
+gem 'logtail-rack'
+gem "sqlite3", ">= 2.0"
+
+gemspec :path => '../'
