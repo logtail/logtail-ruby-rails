@@ -11,10 +11,13 @@ bundle install
 
 This will install all dependencies listed in the `Gemfile.lock` file.
 
-Then replace `<SOURCE_TOKEN>` in `config/application.rb` with your actual source token which you can find by going to [Better Stack](https://logs.betterstack.com/) -> Sources -> Edit.
+Then replace `<SOURCE_TOKEN>` and `<INGESTING_HOST>` in `config/application.rb` with your actual source token and ingesting host which you can find by going to [Sources](https://telemetry.betterstack.com/team/0/sources) -> Configure in Better Stack.
 
 ```ruby
-config.logger = Logtail::Logger.create_default_logger("<YOUR_ACTUAL_SOURCE_TOKEN>")
+config.logger = Logtail::Logger.create_default_logger(
+  "<YOUR_ACTUAL_SOURCE_TOKEN>",
+  telemetry_host: "in.logs.betterstack.com",
+)
 ```
 
 ## Run the example project
