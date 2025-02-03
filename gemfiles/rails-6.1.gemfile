@@ -6,6 +6,10 @@ gem 'sidekiq', '>= 7.3.0', require: false if RUBY_VERSION >= '2.7.0'
 gem 'logtail'
 gem 'logtail-rack'
 
+if RUBY_VERSION >= "3.4.0"
+  gem 'mutex_m'
+end
+
 if RUBY_PLATFORM == "java"
   gem 'mime-types', '2.6.2'
 end
