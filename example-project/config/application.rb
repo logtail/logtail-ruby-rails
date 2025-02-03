@@ -19,6 +19,6 @@ module ExampleProject
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    config.logger = Logtail::Logger.create_default_logger("<SOURCE_TOKEN>")
+    config.logger = Logtail::Logger.create_default_logger("<SOURCE_TOKEN>", logtail_host: "<INGESTING_HOST>")
   end
 end
