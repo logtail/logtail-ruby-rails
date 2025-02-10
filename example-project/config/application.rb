@@ -21,7 +21,7 @@ module ExampleProject
 
     config.logger = Logtail::Logger.create_default_logger(
       "<SOURCE_TOKEN>",
-      telemetry_host: "<INGESTING_HOST>",
+      ingesting_host: "<INGESTING_HOST>",
     )
   end
 end
