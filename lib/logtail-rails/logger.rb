@@ -56,10 +56,10 @@ module Logtail
     end
 
     def self.create_default_logger(source_token, options = {})
-      # Handle backward-compatibility of argument names
-      options[:logtail_host] ||= options[:telemetry_host] if options[:telemetry_host].present?
-      options[:logtail_port] ||= options[:telemetry_port] if options[:telemetry_port].present?
-      options[:logtail_scheme] ||= options[:telemetry_scheme] if options[:telemetry_scheme].present?
+      # Handle backward-compatibility of argument names from v0.2.9
+      options[:ingesting_host] ||= options[:telemetry_host] if options[:telemetry_host].present?
+      options[:ingesting_port] ||= options[:telemetry_port] if options[:telemetry_port].present?
+      options[:ingesting_scheme] ||= options[:telemetry_scheme] if options[:telemetry_scheme].present?
 
       if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
         io_device = Logtail::LogDevices::HTTP.new(source_token, options)

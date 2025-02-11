@@ -1,5 +1,5 @@
 # Logtail and lograge are not compatible installed together. Using lograge
-# with the Logtail.com *service* is perfectly fine, but not with the Logtail *gem*.
+# with the Better Stack Telemetry *service* is perfectly fine, but not with the Logtail *gem*.
 #
 # Logtail does ship with a {Logtail::Config#logrageify!} option that configures
 # Logtail to behave similarly to Lograge (silencing various logs). Check out

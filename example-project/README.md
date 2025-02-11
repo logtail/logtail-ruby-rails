@@ -16,7 +16,7 @@ Then replace `<SOURCE_TOKEN>` and `<INGESTING_HOST>` in `config/application.rb` 
 ```ruby
 config.logger = Logtail::Logger.create_default_logger(
   "<YOUR_ACTUAL_SOURCE_TOKEN>",
-  telemetry_host: "in.logs.betterstack.com",
+  ingesting_host: "in.logs.betterstack.com",
 )
 ```
 
