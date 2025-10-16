@@ -78,6 +78,9 @@ module Logtail
         end
       end
 
+      # For Rails 8.1 and above, subscribe to the event system
+      Rails.event.subscribe(Logtail::Integrations::Rails::EventLogSubscriber.new(logger)) if Rails.respond_to?(:event)
+
       logger
     end
   end
