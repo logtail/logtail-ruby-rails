@@ -7,6 +7,7 @@ require "active_record"
 require "rack"
 
 require "logtail-rails/active_support_log_subscriber"
+require "logtail-rails/event_log_subscriber"
 require "logtail-rails/config"
 require "logtail-rails/railtie"
 
@@ -55,6 +56,7 @@ module Logtail
         ActionController.enabled = value
         ActionView.enabled = value
         ActiveRecord.enabled = value
+        EventLogSubscriber.enabled = value
       end
 
       # All enabled middlewares. The order is relevant. Middlewares that set
