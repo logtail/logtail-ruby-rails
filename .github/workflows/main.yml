@@ -49,6 +49,8 @@ jobs:
             ruby-version: "2.6"
           - gemfile: "rails-edge"
             ruby-version: "2.5"
+          - gemfile: "rails-8.1"
+            ruby-version: "truffleruby"
 
           - gemfile: "rails-8.1"
             ruby-version: "3.1"
@@ -60,6 +62,8 @@ jobs:
             ruby-version: "2.6"
           - gemfile: "rails-8.1"
             ruby-version: "2.5"
+          - gemfile: "rails-8.1"
+            ruby-version: "truffleruby"
 
           - gemfile: "rails-8.0"
             ruby-version: "3.1"
