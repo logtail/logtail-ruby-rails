@@ -26,9 +26,6 @@ module Logtail
           subscriber = find(component, type)
 
           if !subscriber
-            # In Rails 8.1+, the default log subscriber might not be attached yet
-            return if ::Rails::VERSION::MAJOR > 8 || (::Rails::VERSION::MAJOR == 8 && ::Rails::VERSION::MINOR >= 1)
-
             raise "We could not find a log subscriber for #{component.inspect} of type #{type.inspect}"
           end
 
