@@ -89,6 +89,8 @@ jobs:
             ruby-version: "3.1"
           - gemfile: "rails-5.2"
             ruby-version: "3.0"
+          - gemfile: "rails-5.2"
+            ruby-version: "truffleruby"
 
           - gemfile: "rails-5.1"
             ruby-version: "3"
@@ -100,6 +102,8 @@ jobs:
             ruby-version: "3.1"
           - gemfile: "rails-5.1"
             ruby-version: "3.0"
+          - gemfile: "rails-5.1"
+            ruby-version: "truffleruby"
 
           - gemfile: "rails-5.0"
             ruby-version: "3"
@@ -111,6 +115,8 @@ jobs:
             ruby-version: "3.1"
           - gemfile: "rails-5.0"
             ruby-version: "3.0"
+          - gemfile: "rails-5.0"
+            ruby-version: "truffleruby"
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
