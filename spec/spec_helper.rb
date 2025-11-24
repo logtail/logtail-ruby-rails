@@ -6,6 +6,7 @@ require 'bundler/setup'
 require 'rspec'
 require 'rspec/its'
 require 'rspec/mocks'
+require 'benchmark'
 
 # Support files, order is relevant
 require File.join(File.dirname(__FILE__), 'support', 'socket_hostname')
