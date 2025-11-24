@@ -37,7 +37,6 @@ module Logtail
           }
 
           message = build_log_message(event)
-          logger.info("hello")
           logger.send(self.class.log_level, message, log_data)
         end
 
