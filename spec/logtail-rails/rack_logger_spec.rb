@@ -38,13 +38,21 @@ RSpec.describe Logtail::Integrations::Rails::RackLogger do
       it "should mute the default rails logs" do
         allow(::Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production")) # Rails 3.2.X
 
-        dispatch_rails_request("/rails_rack_logger")
+        # Disable Rails 8.1 event logging for this test to avoid extra log lines
+        original_enabled = Logtail::Integrations::Rails::EventLogSubscriber.enabled
+        Logtail::Integrations::Rails::EventLogSubscriber.enabled = false
 
-        lines = clean_lines(io.string.split("\n"))
-        expect(lines.length).to eq(3)
-        expect(lines[0]).to include("Started GET \\\"/rails_rack_logger\\\"")
-        expect(lines[1]).to include("Processing by RailsRackLoggerController#index as HTML")
-        expect(lines[2]).to include("Completed 200 OK in 0.0ms")
+        begin
+          dispatch_rails_request("/rails_rack_logger")
+
+          lines = clean_lines(io.string.split("\n"))
+          expect(lines.length).to eq(3)
+          expect(lines[0]).to include("Started GET \\\"/rails_rack_logger\\\"")
+          expect(lines[1]).to include("Processing by RailsRackLoggerController#index as HTML")
+          expect(lines[2]).to include("Completed 200 OK in 0.0ms")
+        ensure
+          Logtail::Integrations::Rails::EventLogSubscriber.enabled = original_enabled
+        end
       end
     end
   end
