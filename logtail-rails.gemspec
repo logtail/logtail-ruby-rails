@@ -39,6 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", ">= 0.8"
   spec.add_development_dependency "rspec", "~> 3.0"
 
+  spec.add_development_dependency "benchmark", ">= 0"
   spec.add_development_dependency "bundler-audit", ">= 0"
   spec.add_development_dependency "rails_stdout_logging", ">= 0"
   spec.add_development_dependency "rspec-its", ">= 0"

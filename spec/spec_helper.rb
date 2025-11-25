@@ -6,6 +6,7 @@ require 'bundler/setup'
 require 'rspec'
 require 'rspec/its'
 require 'rspec/mocks'
+require 'benchmark'
 
 # Support files, order is relevant
 require File.join(File.dirname(__FILE__), 'support', 'socket_hostname')
@@ -35,5 +36,14 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  # Reset Logtail Config.instance.logger before each test to prevent mock leakage
+  config.before(:each) do
+    # Reset to default Rails logger proc to prevent mock leakage between tests
+    Logtail::Config.instance.logger = Proc.new { ::Rails.logger }
+
+    # Stub EventLogSubscriber#logger to prevent mock leakage from cached instances
+    allow_any_instance_of(Logtail::Integrations::Rails::EventLogSubscriber).to receive(:logger).and_return(Logtail::Config.instance.logger)
   end
 end
