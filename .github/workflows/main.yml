@@ -13,10 +13,6 @@ jobs:
 
     runs-on: ubuntu-24.04
 
-    # Unreleased Rails (rails-edge) breakage should not block CI — the gem's
-    # log subscriber integration currently fails against Rails main
-    continue-on-error: ${{ matrix.gemfile == 'rails-edge' }}
-
     strategy:
       fail-fast: false
 
@@ -32,7 +28,6 @@ jobs:
           - "2.5"
           - "truffleruby"
         gemfile:
-          - "rails-edge"
           - "rails-8.1"
           - "rails-8.0"
           - "rails-7.2"
@@ -44,16 +39,6 @@ jobs:
           - "rails-5.1"
           - "rails-5.0"
         exclude:
-          - gemfile: "rails-edge"
-            ruby-version: "3.1"
-          - gemfile: "rails-edge"
-            ruby-version: "3.0"
-          - gemfile: "rails-edge"
-            ruby-version: "2.7"
-          - gemfile: "rails-edge"
-            ruby-version: "2.6"
-          - gemfile: "rails-edge"
-            ruby-version: "2.5"
           - gemfile: "rails-8.1"
             ruby-version: "truffleruby"
 
