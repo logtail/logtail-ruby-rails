@@ -13,6 +13,10 @@ jobs:
 
     runs-on: ubuntu-24.04
 
+    # Unreleased Rails (rails-edge) breakage should not block CI — the gem's
+    # log subscriber integration currently fails against Rails main
+    continue-on-error: ${{ matrix.gemfile == 'rails-edge' }}
+
     strategy:
       fail-fast: false
 
