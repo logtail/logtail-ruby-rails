@@ -5,6 +5,10 @@ RSpec.describe Logtail::Integrations::Rails::EventLogSubscriber do
   let(:logger) { Logtail::Logger.new(io) }
   let(:subscriber) { described_class.new(logger) }
 
+  before(:each) do
+    skip("EventLogSubscriber is only subscribed where Rails.event exists, Rails 8.1 and higher") unless Rails.respond_to?(:event)
+  end
+
   around(:each) do |example|
     with_rails_logger(logger) { example.run }
   end
