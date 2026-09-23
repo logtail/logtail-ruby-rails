@@ -1,4 +1,8 @@
 require "rails"
+# Rails 8.2+ sets the template root the ActionView log subscribers strip in the action_view.root
+# initializer, and the ActionView railtie needs the ActionController one
+require "action_controller/railtie"
+require "action_view/railtie"
 require "logtail-rails/railtie"
 
 # Default the rails logger to nothing, each test should be

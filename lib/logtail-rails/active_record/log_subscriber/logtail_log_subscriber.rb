@@ -15,26 +15,54 @@ module Logtail
         #
         # @private
         class LogtailLogSubscriber < ::ActiveRecord::LogSubscriber
-          def sql(event)
-            return true if silence?
+          if ::ActiveRecord::LogSubscriber < ::ActiveSupport::LogSubscriber
+            def sql(event)
+              return true if silence?
 
-            r = super(event)
+              r = super(event)
 
-            if @message
-              payload = event.payload
+              if @message
+                payload = event.payload
 
-              sql_event = Events::SQLQuery.new(
-                sql: payload[:sql],
-                duration_ms: event.duration,
-                message: @message,
-              )
+                sql_event = Events::SQLQuery.new(
+                  sql: payload[:sql],
+                  duration_ms: event.duration,
+                  message: @message,
+                )
 
-              logger.debug sql_event
+                logger.debug sql_event
 
-              @message = nil
+                @message = nil
+              end
+
+              r
             end
+          else
+            # Rails 8.2+ feeds this subscriber from Rails.event: the event is a hash and the
+            # payload carries the duration.
+            self.namespace = "active_record"
 
-            r
+            def sql(event)
+              return true if silence?
+
+              r = super(event)
+
+              if @message
+                payload = event[:payload]
+
+                sql_event = Events::SQLQuery.new(
+                  sql: payload[:sql],
+                  duration_ms: payload[:duration_ms],
+                  message: @message,
+                )
+
+                logger.debug sql_event
+
+                @message = nil
+              end
+
+              r
+            end
           end
 
           private

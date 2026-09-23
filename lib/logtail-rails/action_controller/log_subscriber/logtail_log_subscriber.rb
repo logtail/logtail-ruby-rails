@@ -9,21 +9,42 @@ module Logtail
         #
         # @private
         class LogtailLogSubscriber < ::ActionController::LogSubscriber
-          def start_processing(event)
-            return true if silence?
+          if ::ActionController::LogSubscriber < ::ActiveSupport::LogSubscriber
+            def start_processing(event)
+              return true if silence?
 
-            info do
-              payload = event.payload
-              params = payload[:params].except(*INTERNAL_PARAMS)
-              format = extract_format(payload)
-              format = format.to_s.upcase if format.is_a?(Symbol)
+              info do
+                payload = event.payload
+                params = payload[:params].except(*INTERNAL_PARAMS)
+                format = extract_format(payload)
+                format = format.to_s.upcase if format.is_a?(Symbol)
 
-              Events::ControllerCall.new(
-                controller: payload[:controller],
-                action: payload[:action],
-                format: format,
-                params: params
-              )
+                Events::ControllerCall.new(
+                  controller: payload[:controller],
+                  action: payload[:action],
+                  format: format,
+                  params: params
+                )
+              end
+            end
+          else
+            # Rails 8.2+ feeds this subscriber from Rails.event: the event is a hash whose
+            # payload already comes without the internal params and with the format upcased.
+            self.namespace = "action_controller"
+
+            def request_started(event)
+              return true if silence?
+
+              info do
+                payload = event[:payload]
+
+                Events::ControllerCall.new(
+                  controller: payload[:controller],
+                  action: payload[:action],
+                  format: payload[:format],
+                  params: payload[:params]
+                )
+              end
             end
           end
 
