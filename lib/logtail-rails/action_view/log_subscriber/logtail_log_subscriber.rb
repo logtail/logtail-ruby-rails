@@ -9,51 +9,15 @@ module Logtail
         #
         # @private
         class LogtailLogSubscriber < ::ActionView::LogSubscriber
-          def render_template(event)
-            return true if silence?
+          if ::ActionView::LogSubscriber < ::ActiveSupport::LogSubscriber
+            def render_template(event)
+              return true if silence?
 
-            info do
-              full_name = from_rails_root(event.payload[:identifier])
-              message = "  Rendered #{full_name}"
-              message << " within #{from_rails_root(event.payload[:layout])}" if event.payload[:layout]
-              message << " (#{event.duration.round(1)}ms)"
-
-              Events::TemplateRender.new(
-                name: full_name,
-                duration_ms: event.duration,
-                message: message
-              )
-            end
-          end
-          subscribe_log_level :render_template, :info if defined?(subscribe_log_level)
-
-          def render_partial(event)
-            return true if silence?
-
-            info do
-              full_name = from_rails_root(event.payload[:identifier])
-              message = "  Rendered #{full_name}"
-              message << " within #{from_rails_root(event.payload[:layout])}" if event.payload[:layout]
-              message << " (#{event.duration.round(1)}ms)"
-              message << " #{cache_message(event.payload)}" if event.payload.key?(:cache_hit)
-
-              Events::TemplateRender.new(
-                name: full_name,
-                duration_ms: event.duration,
-                message: message
-              )
-            end
-          end
-
-          def render_collection(event)
-            return true if silence?
-
-            if respond_to?(:render_count, true)
               info do
-                identifier = event.payload[:identifier] || "templates"
-                full_name = from_rails_root(identifier)
-                message = "  Rendered collection of #{full_name}" \
-                  " #{render_count(event.payload)} (#{event.duration.round(1)}ms)"
+                full_name = from_rails_root(event.payload[:identifier])
+                message = "  Rendered #{full_name}"
+                message << " within #{from_rails_root(event.payload[:layout])}" if event.payload[:layout]
+                message << " (#{event.duration.round(1)}ms)"
 
                 Events::TemplateRender.new(
                   name: full_name,
@@ -61,21 +25,118 @@ module Logtail
                   message: message
                 )
               end
-            else
-              # Older versions of rails delegate this method to #render_template
-              render_template(event)
             end
-          end
+            subscribe_log_level :render_template, :info if defined?(subscribe_log_level)
 
-          def self.attach_to(*)
-            super
+            def render_partial(event)
+              return true if silence?
 
-            if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
-              # Clean extra listeners subscribed in parent's attach_to method
-              ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
-                .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
-                .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
-                .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
+              info do
+                full_name = from_rails_root(event.payload[:identifier])
+                message = "  Rendered #{full_name}"
+                message << " within #{from_rails_root(event.payload[:layout])}" if event.payload[:layout]
+                message << " (#{event.duration.round(1)}ms)"
+                message << " #{cache_message(event.payload)}" if event.payload.key?(:cache_hit)
+
+                Events::TemplateRender.new(
+                  name: full_name,
+                  duration_ms: event.duration,
+                  message: message
+                )
+              end
+            end
+
+            def render_collection(event)
+              return true if silence?
+
+              if respond_to?(:render_count, true)
+                info do
+                  identifier = event.payload[:identifier] || "templates"
+                  full_name = from_rails_root(identifier)
+                  message = "  Rendered collection of #{full_name}" \
+                    " #{render_count(event.payload)} (#{event.duration.round(1)}ms)"
+
+                  Events::TemplateRender.new(
+                    name: full_name,
+                    duration_ms: event.duration,
+                    message: message
+                  )
+                end
+              else
+                # Older versions of rails delegate this method to #render_template
+                render_template(event)
+              end
+            end
+
+            def self.attach_to(*)
+              super
+
+              if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
+                # Clean extra listeners subscribed in parent's attach_to method
+                ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
+                  .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
+                  .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
+                  .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
+              end
+            end
+          else
+            # Rails 8.2+ feeds this subscriber from Rails.event: the event is a hash and the
+            # payload carries the duration.
+            self.namespace = "action_view"
+
+            def render_template(event)
+              return true if silence?
+
+              info do
+                payload = event[:payload]
+                full_name = from_rails_root(payload[:identifier])
+                message = "  Rendered #{full_name}"
+                message << " within #{from_rails_root(payload[:layout])}" if payload[:layout]
+                message << " (#{payload[:duration_ms].round(1)}ms)"
+
+                Events::TemplateRender.new(
+                  name: full_name,
+                  duration_ms: payload[:duration_ms],
+                  message: message
+                )
+              end
+            end
+            event_log_level :render_template, :info
+
+            def render_partial(event)
+              return true if silence?
+
+              info do
+                payload = event[:payload]
+                full_name = from_rails_root(payload[:identifier])
+                message = "  Rendered #{full_name}"
+                message << " within #{from_rails_root(payload[:layout])}" if payload[:layout]
+                message << " (#{payload[:duration_ms].round(1)}ms)"
+                message << " #{cache_message(payload)}" unless payload[:cache_hit].nil?
+
+                Events::TemplateRender.new(
+                  name: full_name,
+                  duration_ms: payload[:duration_ms],
+                  message: message
+                )
+              end
+            end
+
+            def render_collection(event)
+              return true if silence?
+
+              info do
+                payload = event[:payload]
+                full_name = from_rails_root(payload[:identifier] || "templates")
+                message = "  Rendered collection of #{full_name}" \
+                  " #{render_count(payload)} (#{payload[:duration_ms].round(1)}ms)"
+
+                Events::TemplateRender.new(
+                  name: full_name,
+                  duration_ms: payload[:duration_ms],
+                  message: message
+                )
+              end
             end
           end
 
