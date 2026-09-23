@@ -61,8 +61,13 @@ RSpec.describe Logtail::Integrations::ActionView::LogSubscriber do
   if defined?(described_class::LogtailLogSubscriber)
     describe described_class::LogtailLogSubscriber do
       let(:event) do
-        event = Struct.new(:duration, :payload)
-        event.new(2.0, identifier: "path/to/template.html")
+        if ::ActionView::LogSubscriber < ::ActiveSupport::LogSubscriber
+          event = Struct.new(:duration, :payload)
+          event.new(2.0, identifier: "path/to/template.html")
+        else
+          # Rails 8.2+ delivers structured events through ActiveSupport::EventReporter
+          { name: "action_view.render_template", payload: { identifier: "path/to/template.html", duration_ms: 2.0 } }
+        end
       end
 
       around(:each) do |example|
