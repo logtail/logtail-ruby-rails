@@ -1,20 +1,20 @@
 # Publishes the gem to RubyGems.org from GitHub Actions, the way logtail-js and logtail-python
-# release their packages. The publish job runs in the "rubygems" environment, so its required
-# reviewers are the release gate.
+# release their packages. The publish job runs in the "rubygems" environment, which only deploys
+# from main; anyone who can dispatch the workflow can release.
 #
 # Authentication: the repository secret RUBYGEMS_CREDENTIALS holds the contents of a gem
 # credentials file for the shared rubygems.org account, i.e. ":rubygems_api_key: rubygems_…",
 # the line the manual process kept in ~/.local/share/gem/credentials.
 #
-# One-time setup on GitHub: create the "rubygems" environment with required reviewers and
-# deployment branches limited to main. A job that references a missing environment creates it
-# WITHOUT protection.
+# The "rubygems" environment lives in the repository settings with deployment branches limited to
+# main and no required reviewers. Add reviewers there if releases should need an approval; a job
+# that references a missing environment would create it WITHOUT protection.
 #
 # Release: merge a pull request that bumps the version in lib/*/version.rb (main requires pull
 # requests, so unlike logtail-js and logtail-python the workflow does not commit the bump itself),
-# then Actions → Release → Run workflow from main and approve the environment prompt. The workflow
-# runs the tests, builds the gem, pushes it to RubyGems.org, tags the commit vX.Y.Z and creates a
-# GitHub release with auto-generated notes for the tag; edit the notes afterwards if needed.
+# then Actions → Release → Run workflow from main. The workflow runs the tests, builds the gem,
+# pushes it to RubyGems.org, tags the commit vX.Y.Z and creates a GitHub release with
+# auto-generated notes for the tag; edit the notes afterwards if needed.
 #
 # Retry: if a release failed halfway, run it again from the same commit. It skips the push when
 # the version is on RubyGems.org already and creates the tag and the GitHub release if they are
