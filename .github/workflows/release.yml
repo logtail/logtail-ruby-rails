@@ -1,0 +1,184 @@
+# Publishes the gem to RubyGems.org from GitHub Actions, the way logtail-js and logtail-python
+# release their packages. The publish job runs in the "rubygems" environment, which only deploys
+# from main; anyone who can dispatch the workflow can release.
+#
+# Authentication: the repository secret RUBYGEMS_CREDENTIALS holds the contents of a gem
+# credentials file for the shared rubygems.org account, i.e. ":rubygems_api_key: rubygems_…",
+# the line the manual process kept in ~/.local/share/gem/credentials.
+#
+# The "rubygems" environment lives in the repository settings with deployment branches limited to
+# main and no required reviewers. Add reviewers there if releases should need an approval; a job
+# that references a missing environment would create it WITHOUT protection.
+#
+# Release: merge a pull request that bumps the version in lib/*/version.rb (main requires pull
+# requests, so unlike logtail-js and logtail-python the workflow does not commit the bump itself),
+# then Actions → Release → Run workflow from main. The workflow runs the tests, builds the gem,
+# pushes it to RubyGems.org, tags the commit vX.Y.Z and creates a GitHub release with
+# auto-generated notes for the tag; edit the notes afterwards if needed.
+#
+# Retry: if a release failed halfway, run it again from the same commit. It skips the push when
+# the version is on RubyGems.org already and creates the tag and the GitHub release if they are
+# still missing.
+#
+# Dry run: runs the tests, builds the gem and checks the credentials secret, publishes nothing.
+# Every push that touches this file is a dry run, so a change to the workflow proves itself on
+# its pull request before it reaches main. A dry run can also be dispatched from any branch.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: test, build and check the credentials, publish nothing"
+        type: boolean
+        default: false
+  push:
+    paths:
+      - .github/workflows/release.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  DRY_RUN: ${{ github.event_name == 'push' || inputs.dry_run }}
+
+jobs:
+  verify:
+    name: Test
+    runs-on: ubuntu-24.04
+    env:
+      # The only gemfile with a committed lockfile; the root Gemfile cannot load the suite.
+      BUNDLE_GEMFILE: gemfiles/rails-8.1.gemfile
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3"
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rspec
+
+  build:
+    name: Build
+    needs: verify
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      gem: ${{ steps.build.outputs.gem }}
+
+    steps:
+      - name: Releases run from main only
+        if: ${{ env.DRY_RUN != 'true' && github.ref != 'refs/heads/main' }}
+        run: |
+          echo "::error::Dispatch the release from main, not from $GITHUB_REF_NAME."
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the version check looks at the tags
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3"
+
+      - name: Check the version
+        id: version
+        run: |
+          version=$(ruby -e 'puts File.read(Dir["lib/**/version.rb"].fetch(0))[/VERSION = "(\d+\.\d+\.\d+)"/, 1] || abort("no VERSION constant in lib/*/version.rb")')
+          released_from=$(git rev-list -n 1 "v$version" 2> /dev/null || true)
+          if [ -n "$released_from" ] && [ "$released_from" != "$GITHUB_SHA" ]; then
+            if [ "$DRY_RUN" = true ]; then
+              echo "::warning::v$version is released from $released_from already, a release from this commit needs a version bump in lib/*/version.rb first."
+            else
+              echo "::error::v$version is released from $released_from already. Bump the version in lib/*/version.rb in a pull request first."
+              exit 1
+            fi
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Version $version"
+
+      - name: Build the gem
+        id: build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gem build *.gemspec
+          gem=$(ls *.gem)
+          case "$gem" in
+            *-"$VERSION".gem) ;;
+            *) echo "::error::Built $gem, expected version $VERSION."; exit 1 ;;
+          esac
+          echo "gem=$gem" >> "$GITHUB_OUTPUT"
+
+      - name: Dry run
+        if: ${{ env.DRY_RUN == 'true' }}
+        env:
+          RUBYGEMS_CREDENTIALS: ${{ secrets.RUBYGEMS_CREDENTIALS }}
+        run: |
+          if ! grep -q '^:rubygems_api_key: [^ ]' <<< "$RUBYGEMS_CREDENTIALS"; then
+            echo "::error::The RUBYGEMS_CREDENTIALS secret must hold the contents of a gem credentials file: ':rubygems_api_key: rubygems_…'"
+            exit 1
+          fi
+          echo "RUBYGEMS_CREDENTIALS looks like a gem credentials file. A release pushes with it, nothing more to verify without pushing."
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gem
+          path: "*.gem"
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+    runs-on: ubuntu-24.04
+    environment: rubygems
+    permissions:
+      contents: write # creates the tag and the GitHub release
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      GEM: ${{ needs.build.outputs.gem }}
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: gem
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3"
+
+      - name: Push to RubyGems.org
+        env:
+          RUBYGEMS_CREDENTIALS: ${{ secrets.RUBYGEMS_CREDENTIALS }}
+        run: |
+          name="${GEM%-$VERSION.gem}"
+          if gem specification --remote "$name" --version "$VERSION" > /dev/null 2>&1; then
+            echo "$name $VERSION is on rubygems.org already, finishing the release."
+          else
+            mkdir -p ~/.gem
+            (umask 077 && printf '%s\n' "$RUBYGEMS_CREDENTIALS" > ~/.gem/credentials)
+            gem push "$GEM"
+          fi
+
+      - name: Tag and create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "Release v$VERSION already exists."
+          else
+            # Creates the v$VERSION tag on this commit when it is still missing.
+            gh release create "v$VERSION" --target "$GITHUB_SHA" --generate-notes
+          fi
