@@ -58,7 +58,10 @@ Gem::Specification.new do |spec|
     spec.add_development_dependency('activerecord-jdbcsqlite3-adapter', '>= 0')
   elsif rails_version >= 3 && rails_version < 6
     spec.add_development_dependency('sqlite3', '1.3.13')
-  else
+  elsif rails_version >= 6 && rails_version < 8
     spec.add_development_dependency('sqlite3', '~> 1.5.0')
+  else
+    # Rails 8 and newer, which is also what rails-edge and the root Gemfile resolve to
+    spec.add_development_dependency('sqlite3', '>= 2.0')
   end
 end
