@@ -51,7 +51,7 @@ jobs:
     name: Test
     runs-on: ubuntu-24.04
     env:
-      # The only gemfile with a committed lockfile; the root Gemfile cannot load the suite.
+      # The root Gemfile cannot load the suite, so the tests run against the newest released Rails.
       BUNDLE_GEMFILE: gemfiles/rails-8.1.gemfile
       RAILS_ENV: test
     steps:
