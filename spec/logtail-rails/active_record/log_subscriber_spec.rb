@@ -39,6 +39,37 @@ RSpec.describe Logtail::Integrations::ActiveRecord::LogSubscriber do
         expect(string).to include("\"level\":\"debug\"")
         expect(string).to include("\"sql_query_executed\":")
       end
+
+      it "should log the bind values" do
+        User.where(first_name: "Petr").to_a
+        expect(io.string).to include('[[\"first_name\", \"Petr\"]]')
+      end
+
+      if Rails.respond_to?(:event)
+        # What config.log_level = :info does when the app boots. Rails 8.2 reports the SQL events
+        # to Rails.event in debug mode only, whatever the level of the logger is.
+        context "with the debug mode of Rails.event turned off" do
+          around(:each) do |example|
+            debug_mode = Rails.event.debug_mode?
+            Rails.event.debug_mode = false
+            example.run
+            Rails.event.debug_mode = debug_mode
+          end
+
+          it "should log the sql query" do
+            ActiveRecord::Base.connection.execute("select * from users")
+            expect(io.string).to include("select * from users")
+            expect(io.string).to include("duration_ms")
+            expect(io.string).to include("\"level\":\"debug\"")
+            expect(io.string).to include("\"sql_query_executed\":")
+          end
+
+          it "should log the bind values" do
+            User.where(first_name: "Petr").to_a
+            expect(io.string).to include('[[\"first_name\", \"Petr\"]]')
+          end
+        end
+      end
     end
   end
 end
