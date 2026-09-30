@@ -1,10 +1,11 @@
-# Publishes the gem to RubyGems.org from GitHub Actions, the way logtail-js and logtail-python
-# release their packages. The publish job runs in the "rubygems" environment, which only deploys
-# from main; anyone who can dispatch the workflow can release.
+# Publishes the gem to RubyGems.org from GitHub Actions with trusted publishing (OIDC), the way
+# logtail-js releases the @logtail/* packages to npm. No RubyGems.org API key exists anywhere:
+# the gem on rubygems.org trusts exactly this workflow file, run from this repository in the
+# "rubygems" environment, and the shared account's multi-factor authentication stays as it is.
 #
-# Authentication: the repository secret RUBYGEMS_CREDENTIALS holds the contents of a gem
-# credentials file for the shared rubygems.org account, i.e. ":rubygems_api_key: rubygems_…",
-# the line the manual process kept in ~/.local/share/gem/credentials.
+# One-time setup on rubygems.org, signed in as the gem's owner: the gem's page → Trusted publishers
+# → GitHub Actions, with the repository owner "logtail", this repository's name, the workflow
+# "release.yml" and the environment "rubygems".
 #
 # Repository settings this relies on: the "rubygems" environment with deployment branches limited
 # to main and no required reviewers (add reviewers there if releases should need an approval; a
@@ -22,10 +23,11 @@
 # missing it and creates the GitHub release if it is still missing. Running patch or minor again
 # would release the next version instead.
 #
-# Dry run: bumps in place without committing, builds the gem and checks the credentials secret,
-# publishes nothing. Every push that touches this file is a dry run, so a change to the workflow
-# proves itself on its pull request before it reaches main. A dry run can also be dispatched from
-# any branch.
+# Dry run: bumps in place without committing, builds the gem and exchanges the workflow's OIDC
+# token with RubyGems.org, which proves that the trusted publisher matches this workflow. Nothing
+# is pushed. Every push that touches this file is a dry run, so a change to the workflow proves
+# itself on its pull request before it reaches main. A dry run can also be dispatched from any
+# branch.
 name: Release
 
 on:
@@ -37,7 +39,7 @@ on:
         options: [patch, minor, retry]
         required: true
       dry_run:
-        description: "Dry run: bump and build, check the credentials, publish nothing"
+        description: "Dry run: bump and build, verify RubyGems.org accepts this workflow, publish nothing"
         type: boolean
         default: false
   push:
@@ -130,6 +132,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          git diff --stat
           gem build *.gemspec
           gem=$(ls *.gem)
           case "$gem" in
@@ -137,18 +140,6 @@ jobs:
             *) echo "::error::Built $gem, expected version $VERSION."; exit 1 ;;
           esac
           echo "gem=$gem" >> "$GITHUB_OUTPUT"
-
-      - name: Dry run
-        if: ${{ env.DRY_RUN == 'true' }}
-        env:
-          RUBYGEMS_CREDENTIALS: ${{ secrets.RUBYGEMS_CREDENTIALS }}
-        run: |
-          git diff --stat
-          if ! grep -q '^:rubygems_api_key: [^ ]' <<< "$RUBYGEMS_CREDENTIALS"; then
-            echo "::error::The RUBYGEMS_CREDENTIALS secret must hold the contents of a gem credentials file: ':rubygems_api_key: rubygems_…'"
-            exit 1
-          fi
-          echo "RUBYGEMS_CREDENTIALS looks like a gem credentials file. A release pushes with it, nothing more to verify without pushing."
 
       - name: Commit and tag
         if: ${{ env.DRY_RUN != 'true' && env.RELEASE != 'retry' }}
@@ -170,11 +161,11 @@ jobs:
   release:
     name: Publish
     needs: build
-    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
     runs-on: ubuntu-24.04
     environment: rubygems
     permissions:
       contents: write # creates the GitHub release
+      id-token: write # OIDC token exchange with RubyGems.org
     env:
       VERSION: ${{ needs.build.outputs.version }}
       GEM: ${{ needs.build.outputs.gem }}
@@ -189,20 +180,28 @@ jobs:
         with:
           ruby-version: "3"
 
+      # Exchanges the job's OIDC token for a short-lived RubyGems.org API key and hands it to
+      # `gem push`. Fails when no trusted publisher on rubygems.org matches this workflow.
+      - uses: rubygems/configure-rubygems-credentials@v2.1.0
+
+      - name: Dry run
+        if: ${{ env.DRY_RUN == 'true' }}
+        run: |
+          ls -l "$GEM"
+          echo "RubyGems.org accepted the OIDC token: the trusted publisher matches this workflow. Nothing is pushed."
+
       - name: Push to RubyGems.org
-        env:
-          RUBYGEMS_CREDENTIALS: ${{ secrets.RUBYGEMS_CREDENTIALS }}
+        if: ${{ env.DRY_RUN != 'true' }}
         run: |
           name="${GEM%-$VERSION.gem}"
           if gem specification --remote "$name" --version "$VERSION" > /dev/null 2>&1; then
             echo "$name $VERSION is on rubygems.org already, finishing the release."
           else
-            mkdir -p ~/.gem
-            (umask 077 && printf '%s\n' "$RUBYGEMS_CREDENTIALS" > ~/.gem/credentials)
             gem push "$GEM"
           fi
 
       - name: Create GitHub release
+        if: ${{ env.DRY_RUN != 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
