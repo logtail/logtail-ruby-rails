@@ -51,7 +51,8 @@ module Logtail
           return false unless defined?(::ActiveSupport::StructuredEventSubscriber)
 
           ::ActiveSupport::StructuredEventSubscriber.descendants.any? do |bridge|
-            event[:name].start_with?("#{bridge.namespace}.")
+            # The namespace attach_to recorded is a private reader on ActiveSupport::Subscriber
+            event[:name].start_with?("#{bridge.send(:namespace)}.")
           end
         end
 
