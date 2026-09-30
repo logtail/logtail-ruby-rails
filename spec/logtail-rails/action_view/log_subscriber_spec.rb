@@ -54,6 +54,26 @@ RSpec.describe Logtail::Integrations::ActionView::LogSubscriber do
           expect(lines[2].strip).to match(/Rendered spec\/support\/rails\/templates\/template.html \(\d+\.\d+ms\)/)
           expect(lines[2]).to include("\"template_rendered\":{\"name\":\"spec/support/rails/templates/template.html\"")
         end
+
+        if Rails.respond_to?(:event)
+          # What config.log_level = :info does when the app boots. Rails 8.2 reports the rendering
+          # events to Rails.event in debug mode only.
+          context "with the debug mode of Rails.event turned off" do
+            around(:each) do |example|
+              debug_mode = Rails.event.debug_mode?
+              Rails.event.debug_mode = false
+              example.run
+              Rails.event.debug_mode = debug_mode
+            end
+
+            it "should log a template render event once" do
+              dispatch_rails_request("/action_view_log_subscriber")
+              lines = clean_lines(io.string.split("\n"))
+              expect(lines[2].strip).to match(/Rendered spec\/support\/rails\/templates\/template.html \(\d+\.\d+ms\)/)
+              expect(lines[2]).to include("\"template_rendered\":{\"name\":\"spec/support/rails/templates/template.html\"")
+            end
+          end
+        end
       end
     end
   end

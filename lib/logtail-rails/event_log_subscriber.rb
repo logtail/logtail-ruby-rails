@@ -22,6 +22,7 @@ module Logtail
         # Rails 8.1 event emission method - called when events are emitted
         def emit(event)
           return unless self.class.enabled
+          return if framework_event?(event)
 
           # Log the event with all its data to Rails.logger
           # Create a structured log entry with the event data
@@ -41,6 +42,17 @@ module Logtail
         end
 
         private
+
+        # Rails 8.2+ routes the framework's own instrumentation (controller calls, SQL queries,
+        # template renders, ...) through Rails.event as well. The Rails log subscribers, and ours
+        # replacing them, already log those, so only the application's own events are forwarded.
+        def framework_event?(event)
+          return false unless defined?(::ActiveSupport::EventReporter::LogSubscriber)
+
+          ::ActiveSupport::EventReporter::LogSubscriber.descendants.any? do |log_subscriber|
+            event[:name].start_with?("#{log_subscriber.namespace}.")
+          end
+        end
 
         def build_log_message(event)
           payload = event[:payload] || {}

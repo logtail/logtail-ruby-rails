@@ -1,6 +1,8 @@
 source 'https://rubygems.org'
 
-gem 'rails', '~> 7.2.0'
+# 7.2.4 is the first release that works with json 3. Without the floor, Bundler prefers
+# minitest 6 over it and settles for Rails 7.2.3.
+gem 'rails', '~> 7.2.4'
 gem 'sidekiq', '>= 7.3.0', require: false
 
 gem 'logtail'

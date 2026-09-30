@@ -7,8 +7,12 @@ module Logtail
         # The intent of this subscriber is to, as transparently as possible, properly
         # track events that are being logged here.
         #
+        # Until Rails 8.1 it extends the default subscriber. Rails 8.2 turned that one into a
+        # subscriber of Rails.event, which receives the rendering events in debug mode only, so
+        # there this subscriber listens to the notifications on its own.
+        #
         # @private
-        class LogtailLogSubscriber < ::ActionView::LogSubscriber
+        class LogtailLogSubscriber < (::ActionView::LogSubscriber < ::ActiveSupport::LogSubscriber ? ::ActionView::LogSubscriber : ::ActiveSupport::LogSubscriber)
           def render_template(event)
             return true if silence?
 
@@ -67,15 +71,25 @@ module Logtail
             end
           end
 
-          def self.attach_to(*)
-            super
+          if superclass == ::ActionView::LogSubscriber
+            def self.attach_to(*)
+              super
 
-            if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
-              # Clean extra listeners subscribed in parent's attach_to method
-              ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
-                .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
-                .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
-                .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
+              if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
+                # Clean extra listeners subscribed in parent's attach_to method
+                ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
+                  .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
+                  .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
+                  .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
+              end
+            end
+          else
+            # The default subscriber used to bring these log levels, the logger and the helpers below
+            subscribe_log_level :render_partial, :debug
+            subscribe_log_level :render_collection, :debug
+
+            def logger
+              ::ActionView::Base.logger
             end
           end
 
@@ -89,6 +103,35 @@ module Logtail
 
           def silence?
             ActionView.silence?
+          end
+
+          unless superclass == ::ActionView::LogSubscriber
+            def from_rails_root(string)
+              string = string.sub(rails_root, "")
+              string.sub!(/^app\/views\//, "")
+              string
+            end
+
+            def rails_root
+              @rails_root ||= "#{::Rails.root}/"
+            end
+
+            def render_count(payload)
+              if payload[:cache_hits]
+                "[#{payload[:cache_hits]} / #{payload[:count]} cache hits]"
+              else
+                "[#{payload[:count]} times]"
+              end
+            end
+
+            def cache_message(payload)
+              case payload[:cache_hit]
+              when :hit
+                "[cache hit]"
+              when :miss
+                "[cache miss]"
+              end
+            end
           end
         end
       end

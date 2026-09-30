@@ -17,7 +17,7 @@ module Logtail
           return true if Logtail::Integrations::Rails::ActiveSupportLogSubscriber.subscribed?(:action_view, LogtailLogSubscriber)
 
           Logtail::Integrations::Rails::ActiveSupportLogSubscriber.unsubscribe!(:action_view, ::ActionView::LogSubscriber)
-          LogtailLogSubscriber.attach_to(:action_view)
+          Logtail::Integrations::Rails::ActiveSupportLogSubscriber.subscribe!(:action_view, LogtailLogSubscriber)
         end
       end
     end
