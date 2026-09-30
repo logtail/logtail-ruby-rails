@@ -23,11 +23,12 @@
 # missing it and creates the GitHub release if it is still missing. Running patch or minor again
 # would release the next version instead.
 #
-# Dry run: bumps in place without committing, builds the gem and exchanges the workflow's OIDC
-# token with RubyGems.org, which proves that the trusted publisher matches this workflow. Nothing
-# is pushed. Every push that touches this file is a dry run, so a change to the workflow proves
-# itself on its pull request before it reaches main. A dry run can also be dispatched from any
-# branch.
+# Dry run: bumps in place without committing, builds the gem and, on main, exchanges the
+# workflow's OIDC token with RubyGems.org, which proves that the trusted publisher matches this
+# workflow. Nothing is pushed. Every push that touches this file is a dry run, so a change to the
+# workflow proves itself on its pull request before it reaches main, and the push that merges it
+# performs the token exchange as well, because the "rubygems" environment only admits main. A dry
+# run can also be dispatched from any branch.
 name: Release
 
 on:
@@ -161,6 +162,8 @@ jobs:
   release:
     name: Publish
     needs: build
+    # The rubygems environment only admits main, so dry runs from other branches stop after the build
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     environment: rubygems
     permissions:
