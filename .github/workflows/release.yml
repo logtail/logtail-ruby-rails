@@ -18,10 +18,10 @@
 # both, pushes the gem to RubyGems.org and creates a GitHub release with auto-generated notes for
 # the tag; edit the notes afterwards if needed.
 #
-# Retry: if a release failed after the version commit was pushed, run "retry" right away from
-# main. It bumps nothing, rebuilds the tagged commit, pushes the gem if RubyGems.org is still
-# missing it and creates the GitHub release if it is still missing. Running patch or minor again
-# would release the next version instead.
+# Retry: if a release failed after the version commit was pushed, run "retry" from main. It bumps
+# nothing, checks out the tag of the version in lib/*/version.rb and rebuilds that commit, pushes
+# the gem if RubyGems.org is still missing it and creates the GitHub release if it is still
+# missing. Running patch or minor again would release the next version instead.
 #
 # Dry run: bumps in place without committing, builds the gem and, on main, exchanges the
 # workflow's OIDC token with RubyGems.org, which proves that the trusted publisher matches this
@@ -115,7 +115,9 @@ jobs:
           tagged = `git tag --points-at HEAD`.split.include?("v#{current}")
 
           if release == "retry"
-            abort("retry only finishes a release whose version commit v#{current} is HEAD") unless tagged
+            # main may have moved on since the version commit, so build what the tag points at
+            abort("retry only finishes a release whose version v#{current} is tagged") unless system("git", "rev-parse", "-q", "--verify", "refs/tags/v#{current}", out: File::NULL)
+            system("git", "checkout", "-q", "v#{current}") || abort("could not check out v#{current}")
             version = current
           else
             abort("HEAD is already released as v#{current}, there is nothing new to release") if tagged && !dry_run
