@@ -6,30 +6,38 @@
 # credentials file for the shared rubygems.org account, i.e. ":rubygems_api_key: rubygems_…",
 # the line the manual process kept in ~/.local/share/gem/credentials.
 #
-# The "rubygems" environment lives in the repository settings with deployment branches limited to
-# main and no required reviewers. Add reviewers there if releases should need an approval; a job
-# that references a missing environment would create it WITHOUT protection.
+# Repository settings this relies on: the "rubygems" environment with deployment branches limited
+# to main and no required reviewers (add reviewers there if releases should need an approval; a
+# job that references a missing environment would create it WITHOUT protection), and the GitHub
+# Actions app among the actors allowed to bypass the pull request requirement of main, which the
+# version commit needs.
 #
-# Release: merge a pull request that bumps the version in lib/*/version.rb (main requires pull
-# requests, so unlike logtail-js and logtail-python the workflow does not commit the bump itself),
-# then Actions → Release → Run workflow from main. The workflow runs the tests, builds the gem,
-# pushes it to RubyGems.org, tags the commit vX.Y.Z and creates a GitHub release with
-# auto-generated notes for the tag; edit the notes afterwards if needed.
+# Release: Actions → Release → Run workflow from main, pick patch or minor. The workflow runs the
+# tests, bumps the version in lib/*/version.rb, builds the gem, commits "vX.Y.Z", tags it, pushes
+# both, pushes the gem to RubyGems.org and creates a GitHub release with auto-generated notes for
+# the tag; edit the notes afterwards if needed.
 #
-# Retry: if a release failed halfway, run it again from the same commit. It skips the push when
-# the version is on RubyGems.org already and creates the tag and the GitHub release if they are
-# still missing.
+# Retry: if a release failed after the version commit was pushed, run "retry" right away from
+# main. It bumps nothing, rebuilds the tagged commit, pushes the gem if RubyGems.org is still
+# missing it and creates the GitHub release if it is still missing. Running patch or minor again
+# would release the next version instead.
 #
-# Dry run: runs the tests, builds the gem and checks the credentials secret, publishes nothing.
-# Every push that touches this file is a dry run, so a change to the workflow proves itself on
-# its pull request before it reaches main. A dry run can also be dispatched from any branch.
+# Dry run: bumps in place without committing, builds the gem and checks the credentials secret,
+# publishes nothing. Every push that touches this file is a dry run, so a change to the workflow
+# proves itself on its pull request before it reaches main. A dry run can also be dispatched from
+# any branch.
 name: Release
 
 on:
   workflow_dispatch:
     inputs:
+      release:
+        description: "patch or minor: bump, tag and publish. retry: finish a release that failed halfway."
+        type: choice
+        options: [patch, minor, retry]
+        required: true
       dry_run:
-        description: "Dry run: test, build and check the credentials, publish nothing"
+        description: "Dry run: bump and build, check the credentials, publish nothing"
         type: boolean
         default: false
   push:
@@ -45,6 +53,7 @@ concurrency:
 
 env:
   DRY_RUN: ${{ github.event_name == 'push' || inputs.dry_run }}
+  RELEASE: ${{ inputs.release || 'patch' }}
 
 jobs:
   verify:
@@ -67,9 +76,11 @@ jobs:
         run: bundle exec rspec
 
   build:
-    name: Build
+    name: Bump and build
     needs: verify
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write # pushes the version commit and the tag
     outputs:
       version: ${{ steps.version.outputs.version }}
       gem: ${{ steps.build.outputs.gem }}
@@ -83,28 +94,36 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # the version check looks at the tags
+          fetch-depth: 0 # the version check looks at the tags on HEAD
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3"
 
-      - name: Check the version
+      - name: Bump version
         id: version
         run: |
-          version=$(ruby -e 'puts File.read(Dir["lib/**/version.rb"].fetch(0))[/VERSION = "(\d+\.\d+\.\d+)"/, 1] || abort("no VERSION constant in lib/*/version.rb")')
-          released_from=$(git rev-list -n 1 "v$version" 2> /dev/null || true)
-          if [ -n "$released_from" ] && [ "$released_from" != "$GITHUB_SHA" ]; then
-            if [ "$DRY_RUN" = true ]; then
-              echo "::warning::v$version is released from $released_from already, a release from this commit needs a version bump in lib/*/version.rb first."
-            else
-              echo "::error::v$version is released from $released_from already. Bump the version in lib/*/version.rb in a pull request first."
-              exit 1
-            fi
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Version $version"
+          ruby - <<'EOF'
+          release, dry_run = ENV.fetch("RELEASE"), ENV["DRY_RUN"] == "true"
+          path = Dir["lib/**/version.rb"].fetch(0)
+          source = File.read(path)
+          current = source[/VERSION = "(\d+\.\d+\.\d+)"/, 1] || abort("no VERSION constant in #{path}")
+          tagged = `git tag --points-at HEAD`.split.include?("v#{current}")
+
+          if release == "retry"
+            abort("retry only finishes a release whose version commit v#{current} is HEAD") unless tagged
+            version = current
+          else
+            abort("HEAD is already released as v#{current}, there is nothing new to release") if tagged && !dry_run
+            major, minor, patch = current.split(".").map(&:to_i)
+            version = release == "minor" ? "#{major}.#{minor + 1}.0" : "#{major}.#{minor}.#{patch + 1}"
+            File.write(path, source.sub(%("#{current}"), %("#{version}")))
+          end
+
+          puts "#{current} -> #{version}"
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |output| output.puts "version=#{version}" }
+          EOF
 
       - name: Build the gem
         id: build
@@ -124,11 +143,23 @@ jobs:
         env:
           RUBYGEMS_CREDENTIALS: ${{ secrets.RUBYGEMS_CREDENTIALS }}
         run: |
+          git diff --stat
           if ! grep -q '^:rubygems_api_key: [^ ]' <<< "$RUBYGEMS_CREDENTIALS"; then
             echo "::error::The RUBYGEMS_CREDENTIALS secret must hold the contents of a gem credentials file: ':rubygems_api_key: rubygems_…'"
             exit 1
           fi
           echo "RUBYGEMS_CREDENTIALS looks like a gem credentials file. A release pushes with it, nothing more to verify without pushing."
+
+      - name: Commit and tag
+        if: ${{ env.DRY_RUN != 'true' && env.RELEASE != 'retry' }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin main "v$VERSION"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -143,7 +174,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment: rubygems
     permissions:
-      contents: write # creates the tag and the GitHub release
+      contents: write # creates the GitHub release
     env:
       VERSION: ${{ needs.build.outputs.version }}
       GEM: ${{ needs.build.outputs.gem }}
@@ -171,7 +202,7 @@ jobs:
             gem push "$GEM"
           fi
 
-      - name: Tag and create the GitHub release
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -179,6 +210,6 @@ jobs:
           if gh release view "v$VERSION" > /dev/null 2>&1; then
             echo "Release v$VERSION already exists."
           else
-            # Creates the v$VERSION tag on this commit when it is still missing.
-            gh release create "v$VERSION" --target "$GITHUB_SHA" --generate-notes
+            # --verify-tag: only ever attach to the tag the build job pushed, never create one here.
+            gh release create "v$VERSION" --verify-tag --generate-notes
           fi
