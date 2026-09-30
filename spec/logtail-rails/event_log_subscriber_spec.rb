@@ -21,8 +21,8 @@ RSpec.describe Logtail::Integrations::Rails::EventLogSubscriber do
   end
 
   it "does not log events the Rails framework already logs" do
-    skip("Rails 8.2 routes the framework's own events through Rails.event") unless defined?(::ActiveSupport::EventReporter::LogSubscriber)
-
+    # Rails 8.1 reports its own instrumentation to Rails.event as soon as anything subscribes
+    subscriber.emit({ name: "action_controller.request_started", payload: { controller: "UsersController", action: "index" }, tags: {}, context: {}, source_location: {} })
     subscriber.emit({ name: "active_record.sql", payload: { sql: "select 1" }, tags: {}, context: {}, source_location: {} })
 
     expect(io.string).to eq("")
