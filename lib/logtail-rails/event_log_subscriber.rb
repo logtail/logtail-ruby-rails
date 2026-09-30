@@ -43,14 +43,15 @@ module Logtail
 
         private
 
-        # Rails 8.2+ routes the framework's own instrumentation (controller calls, SQL queries,
-        # template renders, ...) through Rails.event as well. The Rails log subscribers, and ours
-        # replacing them, already log those, so only the application's own events are forwarded.
+        # Rails 8.1+ reports its own instrumentation (controller calls, SQL queries, template
+        # renders, ...) to Rails.event as well, through the ActiveSupport::StructuredEventSubscriber
+        # it attaches for each of its components. The Rails log subscribers, and ours replacing
+        # them, already log those, so only the application's own events are forwarded.
         def framework_event?(event)
-          return false unless defined?(::ActiveSupport::EventReporter::LogSubscriber)
+          return false unless defined?(::ActiveSupport::StructuredEventSubscriber)
 
-          ::ActiveSupport::EventReporter::LogSubscriber.descendants.any? do |log_subscriber|
-            event[:name].start_with?("#{log_subscriber.namespace}.")
+          ::ActiveSupport::StructuredEventSubscriber.descendants.any? do |bridge|
+            event[:name].start_with?("#{bridge.namespace}.")
           end
         end
 
