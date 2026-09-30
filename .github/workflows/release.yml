@@ -1,0 +1,219 @@
+# Publishes the gem to RubyGems.org from GitHub Actions with trusted publishing (OIDC), the way
+# logtail-js releases the @logtail/* packages to npm. No RubyGems.org API key exists anywhere:
+# the gem on rubygems.org trusts exactly this workflow file, run from this repository in the
+# "rubygems" environment, and the shared account's multi-factor authentication stays as it is.
+#
+# One-time setup on rubygems.org, signed in as the gem's owner: the gem's page → Trusted publishers
+# → GitHub Actions, with the repository owner "logtail", this repository's name, the workflow
+# "release.yml" and the environment "rubygems".
+#
+# Repository settings this relies on: the "rubygems" environment with deployment branches limited
+# to main and no required reviewers (add reviewers there if releases should need an approval; a
+# job that references a missing environment would create it WITHOUT protection), and the GitHub
+# Actions app among the actors allowed to bypass the pull request requirement of main, which the
+# version commit needs.
+#
+# Release: Actions → Release → Run workflow from main, pick patch or minor. The workflow runs the
+# tests, bumps the version in lib/*/version.rb, builds the gem, commits "vX.Y.Z", tags it, pushes
+# both, pushes the gem to RubyGems.org and creates a GitHub release with auto-generated notes for
+# the tag; edit the notes afterwards if needed.
+#
+# Retry: if a release failed after the version commit was pushed, run "retry" from main. It bumps
+# nothing, checks out the tag of the version in lib/*/version.rb and rebuilds that commit, pushes
+# the gem if RubyGems.org is still missing it and creates the GitHub release if it is still
+# missing. Running patch or minor again would release the next version instead.
+#
+# Dry run: bumps in place without committing, builds the gem and, on main, exchanges the
+# workflow's OIDC token with RubyGems.org, which proves that the trusted publisher matches this
+# workflow. Nothing is pushed. Every push that touches this file is a dry run, so a change to the
+# workflow proves itself on its pull request before it reaches main, and the push that merges it
+# performs the token exchange as well, because the "rubygems" environment only admits main. A dry
+# run can also be dispatched from any branch.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "patch or minor: bump, tag and publish. retry: finish a release that failed halfway."
+        type: choice
+        options: [patch, minor, retry]
+        required: true
+      dry_run:
+        description: "Dry run: bump and build, verify RubyGems.org accepts this workflow, publish nothing"
+        type: boolean
+        default: false
+  push:
+    paths:
+      - .github/workflows/release.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  DRY_RUN: ${{ github.event_name == 'push' || inputs.dry_run }}
+  RELEASE: ${{ inputs.release || 'patch' }}
+
+jobs:
+  verify:
+    name: Test
+    runs-on: ubuntu-24.04
+    env:
+      # The root Gemfile cannot load the suite, so the tests run against the newest released Rails.
+      BUNDLE_GEMFILE: gemfiles/rails-8.1.gemfile
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3"
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rspec
+
+  build:
+    name: Bump and build
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # pushes the version commit and the tag
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      gem: ${{ steps.build.outputs.gem }}
+
+    steps:
+      - name: Releases run from main only
+        if: ${{ env.DRY_RUN != 'true' && github.ref != 'refs/heads/main' }}
+        run: |
+          echo "::error::Dispatch the release from main, not from $GITHUB_REF_NAME."
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the version check looks at the tags on HEAD
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3"
+
+      - name: Bump version
+        id: version
+        run: |
+          ruby - <<'EOF'
+          release, dry_run = ENV.fetch("RELEASE"), ENV["DRY_RUN"] == "true"
+          path = Dir["lib/**/version.rb"].fetch(0)
+          source = File.read(path)
+          current = source[/VERSION = "(\d+\.\d+\.\d+)"/, 1] || abort("no VERSION constant in #{path}")
+          tagged = `git tag --points-at HEAD`.split.include?("v#{current}")
+
+          if release == "retry"
+            # main may have moved on since the version commit, so build what the tag points at
+            abort("retry only finishes a release whose version v#{current} is tagged") unless system("git", "rev-parse", "-q", "--verify", "refs/tags/v#{current}", out: File::NULL)
+            system("git", "checkout", "-q", "v#{current}") || abort("could not check out v#{current}")
+            version = current
+          else
+            abort("HEAD is already released as v#{current}, there is nothing new to release") if tagged && !dry_run
+            major, minor, patch = current.split(".").map(&:to_i)
+            version = release == "minor" ? "#{major}.#{minor + 1}.0" : "#{major}.#{minor}.#{patch + 1}"
+            File.write(path, source.sub(%("#{current}"), %("#{version}")))
+          end
+
+          puts "#{current} -> #{version}"
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |output| output.puts "version=#{version}" }
+          EOF
+
+      - name: Build the gem
+        id: build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git diff --stat
+          gem build *.gemspec
+          gem=$(ls *.gem)
+          case "$gem" in
+            *-"$VERSION".gem) ;;
+            *) echo "::error::Built $gem, expected version $VERSION."; exit 1 ;;
+          esac
+          echo "gem=$gem" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and tag
+        if: ${{ env.DRY_RUN != 'true' && env.RELEASE != 'retry' }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin main "v$VERSION"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gem
+          path: "*.gem"
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: build
+    # The rubygems environment only admits main, so dry runs from other branches stop after the build
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    environment: rubygems
+    permissions:
+      contents: write # creates the GitHub release
+      id-token: write # OIDC token exchange with RubyGems.org
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      GEM: ${{ needs.build.outputs.gem }}
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: gem
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3"
+
+      # Exchanges the job's OIDC token for a short-lived RubyGems.org API key and hands it to
+      # `gem push`. Fails when no trusted publisher on rubygems.org matches this workflow.
+      - uses: rubygems/configure-rubygems-credentials@v2.1.0
+
+      - name: Dry run
+        if: ${{ env.DRY_RUN == 'true' }}
+        run: |
+          ls -l "$GEM"
+          echo "RubyGems.org accepted the OIDC token: the trusted publisher matches this workflow. Nothing is pushed."
+
+      - name: Push to RubyGems.org
+        if: ${{ env.DRY_RUN != 'true' }}
+        run: |
+          name="${GEM%-$VERSION.gem}"
+          if gem specification --remote "$name" --version "$VERSION" > /dev/null 2>&1; then
+            echo "$name $VERSION is on rubygems.org already, finishing the release."
+          else
+            gem push "$GEM"
+          fi
+
+      - name: Create GitHub release
+        if: ${{ env.DRY_RUN != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "Release v$VERSION already exists."
+          else
+            # --verify-tag: only ever attach to the tag the build job pushed, never create one here.
+            gh release create "v$VERSION" --verify-tag --generate-notes
+          fi
