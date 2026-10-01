@@ -18,6 +18,8 @@ class RailsApp < Rails::Application
   config.active_support.deprecation = :stderr
   config.eager_load = false
   config.hosts = nil
+  # What config/initializers/filter_parameter_logging.rb sets in new Rails 8 apps
+  config.filter_parameters += [:passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc]
 end
 
 RailsApp.initialize!
