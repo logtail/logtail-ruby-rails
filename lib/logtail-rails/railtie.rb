@@ -13,6 +13,23 @@ module Logtail
           Logtail::Config.instance.logger = Proc.new { ::Rails.logger }
         end
 
+        # `config.logtail.enabled = false` turns the integration off. The environment files are loaded
+        # by now, and Rails hasn't set up Rails.logger from config.logger yet.
+        initializer(:logtail_enabled, after: :load_environment_config, before: :initialize_logger) do |app|
+          next if app.config.logtail.enabled?
+
+          # Before the :logtail initializer below picks the middlewares
+          Integrations::Rails.enabled = false
+
+          # The setup docs create the logger in config/application.rb, i.e. in every environment. Log to the
+          # default log file instead, with a Logtail::Logger so that `logger.info("message", key: value)` works.
+          if app.config.logger.is_a?(Logtail::Logger)
+            log_file = app.paths["log"].first
+            FileUtils.mkdir_p(File.dirname(log_file))
+            app.config.logger = Logtail::Logger.create_logger(log_file)
+          end
+        end
+
         # Must be loaded after initializers so that we respect any Logtail configuration set
         initializer(:logtail, before: :build_middleware_stack, after: :load_config_initializers) do
           Integrations::Rails.integrate!
