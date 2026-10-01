@@ -54,6 +54,21 @@ RSpec.describe Logtail::Integrations::Rails::ErrorEvent do
       expect(lines[2]).to include("RuntimeError (Boom!)")
       expect(lines[3]).to include("Completed 500 Internal Server Error in")
     end
+
+    it "should re-raise the exception of the app when the logger fails" do
+      error = RuntimeError.new("Boom!")
+      allow(logger).to receive(:add).and_raise(IOError, "closed stream")
+
+      expect { described_class.new(->(_env) { raise error }).call(Rack::MockRequest.env_for("/")) }.to raise_error(RuntimeError) { |raised| expect(raised).to be(error) }
+    end
+
+    it "should re-raise the exception of the app when building the error event fails" do
+      error = RuntimeError.new("Boom!")
+      allow(Logtail::Events::Error).to receive(:new).and_raise(ArgumentError, "bad event")
+
+      expect { described_class.new(->(_env) { raise error }).call(Rack::MockRequest.env_for("/")) }.to raise_error(RuntimeError) { |raised| expect(raised).to be(error) }
+      expect(io.string).to eq("")
+    end
   end
 
   describe "exception responses" do
