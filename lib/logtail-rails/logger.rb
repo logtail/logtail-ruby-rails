@@ -61,10 +61,16 @@ module Logtail
       options[:ingesting_port] ||= options[:telemetry_port] if options[:telemetry_port].present?
       options[:ingesting_scheme] ||= options[:telemetry_scheme] if options[:telemetry_scheme].present?
 
-      if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
-        io_device = Logtail::LogDevices::HTTP.new(source_token, options)
-      else
+      if ENV['LOGTAIL_SKIP_LOGS'].present? || Rails.env.test?
         io_device = STDOUT
+      elsif source_token.blank?
+        # Don't break booting the app without the token, e.g. for `assets:precompile` in a Docker build
+        Kernel.warn("Logtail: the source token passed to Logtail::Logger.create_default_logger is blank, logging to STDOUT instead of sending logs to Better Stack.")
+        io_device = STDOUT
+      else
+        io_device = Logtail::LogDevices::HTTP.new(source_token, options)
+        # Checked once the app has booted, see Logtail::Frameworks::Rails::Railtie
+        @better_stack_logger_created = true
       end
 
       logger = self.create_logger(io_device)
@@ -82,6 +88,13 @@ module Logtail
       Rails.event.subscribe(Logtail::Integrations::Rails::EventLogSubscriber.new(logger)) if Rails.respond_to?(:event)
 
       logger
+    end
+
+    # Whether {create_default_logger} has created a logger that sends logs to Better Stack
+    #
+    # @private
+    def self.better_stack_logger_created?
+      @better_stack_logger_created == true
     end
   end
 end

@@ -23,6 +23,24 @@ module Logtail
             config.app_middleware.use middleware_class
           end
         end
+
+        # A `config.logger = ...` line after config/application.rb, like the one generated in
+        # config/environments/production.rb, replaces the Better Stack logger without any error. Registered here,
+        # so that it runs after the app's own after_initialize blocks, which may still broadcast to the logger.
+        initializer(:logtail_logger_check, after: :load_config_initializers) do |app|
+          app.config.after_initialize do
+            next unless Logtail::Logger.better_stack_logger_created? && Integrations::Rails.enabled?
+
+            loggers = ::Rails.logger.respond_to?(:broadcasts) ? ::Rails.logger.broadcasts : [::Rails.logger]
+            next if loggers.any? { |logger| logger.is_a?(Logtail::Logger) }
+
+            # Before Rails 7.1, broadcasting extends the logger with an anonymous module, which hides the target
+            extended_modules = ::Rails.logger.singleton_class.included_modules - ::Rails.logger.class.included_modules
+            next if extended_modules.any? { |mod| mod.name.nil? }
+
+            Kernel.warn("Logtail: Rails.logger isn't the Better Stack logger created by Logtail::Logger.create_default_logger, and doesn't broadcast to it, so your logs don't reach Better Stack. Most likely config.logger is set again later, e.g. in config/environments/production.rb.")
+          end
+        end
       end
     end
   end
