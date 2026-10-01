@@ -39,6 +39,12 @@ module Logtail
       def self.integrate!
         return false if !enabled?
 
+        # Log the status Rails responds with when the app raises, the way ShowExceptions
+        # determines it: from config.action_dispatch.rescue_responses, 500 by default.
+        Logtail::Integrations::Rack::HTTPEvents.status_for_exception = lambda do |exception|
+          ::ActionDispatch::ExceptionWrapper.new(nil, exception).status_code
+        end
+
         ActionController.integrate!
         ActionDispatch.integrate!
         ActionView.integrate!

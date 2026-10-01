@@ -133,9 +133,29 @@ RSpec.describe Logtail::Integrations::Rails::ErrorEvent do
     end
 
     # Renders exceptions as error pages like a production app, instead of raising them
-    def dispatch_rendering_exceptions(path, env = {})
+    def dispatch_rendering_exceptions(path, env_config = {})
       show_exceptions = ::Rails.gem_version >= Gem::Version.new("7.1") ? :all : true
-      dispatch_rails_request(path, env.merge("action_dispatch.show_exceptions" => show_exceptions))
+
+      with_env_config(env_config.merge("action_dispatch.show_exceptions" => show_exceptions)) do
+        dispatch_rails_request(path)
+      end
+    end
+
+    # Rails copies its config.action_dispatch settings from env_config into every request env
+    def with_env_config(settings)
+      env_config = ::Rails.application.env_config
+      previous = settings.keys.map { |key| [key, env_config.key?(key), env_config[key]] }
+      env_config.merge!(settings)
+
+      yield
+    ensure
+      previous.each do |key, existed, value|
+        if existed
+          env_config[key] = value
+        else
+          env_config.delete(key)
+        end
+      end
     end
 
     def log_rows
