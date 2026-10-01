@@ -82,6 +82,12 @@ RSpec.describe "JSON encoding when to_json raises like json 3 under ActiveSuppor
     expect(JSON.parse(error["backtrace_json"])).to be_an(Array)
   end
 
+  it "should log a Time and NaN as ActiveSupport encoded them" do
+    ::Rails.logger.info("JSON values", custom: {at: time, ratio: Float::NAN})
+
+    expect(JSON.parse(io.string)["custom"]).to eq("at" => "2016-09-01T12:00:00.000Z", "ratio" => nil)
+  end
+
   # The first logged event with this name. The Rack middlewares nest theirs under "event".
   def logged_event(name)
     lines = io.string.split("\n").map { |line| JSON.parse(line) }
