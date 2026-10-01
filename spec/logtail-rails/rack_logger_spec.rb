@@ -49,7 +49,7 @@ RSpec.describe Logtail::Integrations::Rails::RackLogger do
           expect(lines.length).to eq(3)
           expect(lines[0]).to include("Started GET \\\"/rails_rack_logger\\\"")
           expect(lines[1]).to include("Processing by RailsRackLoggerController#index as HTML")
-          expect(lines[2]).to include("Completed 200 OK in 0.0ms")
+          expect(lines[2]).to match(/Completed 200 OK in \d+\.\d+ms/)
         ensure
           Logtail::Integrations::Rails::EventLogSubscriber.enabled = original_enabled
         end
