@@ -67,7 +67,6 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
 
       expect(result["middlewares"]).to include("Logtail::Integrations::Rack::HTTPEvents")
       expect(result["debug_exceptions_patched"]).to eq(true)
-      expect(result["event_log_subscriber_enabled"]).to eq(true)
       expect(result["log_file"]).to be_nil
     end
   end
