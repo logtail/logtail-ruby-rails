@@ -139,12 +139,12 @@ RSpec.describe Logtail::Integrations::Rails::ErrorEvent do
       expect(response_statuses).to eq([404, 500])
     end
 
-    it "should log the error at config.action_dispatch.debug_exception_log_level" do
+    it "should log the error at fatal even when config.action_dispatch.debug_exception_log_level is :error" do
       skip("config.action_dispatch.debug_exception_log_level is new in Rails 7.1") unless ::Rails.application.env_config.key?("action_dispatch.debug_exception_log_level")
 
       dispatch_rendering_exceptions("/runtime_error", "action_dispatch.debug_exception_log_level" => ::Logger::ERROR)
 
-      expect(error_rows.map { |row| [row["level"], row["message"]] }).to eq([["error", "RuntimeError (Boom!)"]])
+      expect(error_rows.map { |row| [row["level"], row["message"]] }).to eq([["fatal", "RuntimeError (Boom!)"]])
     end
 
     # Renders exceptions as error pages like a production app, instead of raising them
