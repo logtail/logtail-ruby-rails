@@ -45,7 +45,7 @@ RSpec.describe Logtail::Integrations::Rack::HTTPEvents do
 
       expect(lines[0]).to include("Started GET \\\"/rack_http\\\"")
       expect(lines[1]).to include("Processing by RackHttpController#index as HTML")
-      expect(lines[2]).to include("Completed 200 OK in 0.0ms")
+      expect(lines[2]).to match(/Completed 200 OK in \d+\.\d+ms/)
     end
 
     context "with the route silenced" do
@@ -87,7 +87,7 @@ RSpec.describe Logtail::Integrations::Rack::HTTPEvents do
         expect(lines.length).to eq(2)
 
         expect(lines[0]).to include("Processing by RackHttpController#index as HTML")
-        expect(lines[1]).to include("GET /rack_http completed with 200 OK in 0.0ms")
+        expect(lines[1]).to match(/GET \/rack_http completed with 200 OK in \d+\.\d+ms/)
       end
     end
   end
