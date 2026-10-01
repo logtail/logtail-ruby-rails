@@ -47,12 +47,20 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
       expect(stdout).to include("Logged after boot")
     end
 
-    it "logs to STDOUT and warns when the source token is an empty string" do
-      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
-      logger = nil
+    it "boots with an empty source token and warns once" do
+      _stdout, stderr, status = boot_app("")
 
-      expect { logger = Logtail::Logger.create_default_logger("") }.to output(a_string_including(blank_token_warning)).to_stderr
-      expect(::ActiveSupport::Logger.logger_outputs_to?(logger, STDOUT)).to eq(true)
+      expect(status).to be_success, stderr
+      expect(stderr.scan(blank_token_warning).length).to eq(1)
+      expect(stderr.scan(/^Logtail: /).length).to eq(1)
+    end
+
+    # E.g. in development, where config/application.rb still creates the logger, but without the token
+    it "doesn't warn about a missing source token when the integration is turned off" do
+      _stdout, stderr, status = boot_app(nil, "Logtail::Integrations::Rails.enabled = false\n")
+
+      expect(status).to be_success, stderr
+      expect(stderr).not_to match(/^Logtail: /)
     end
 
     it "warns once when config.logger is set again after config/application.rb" do
