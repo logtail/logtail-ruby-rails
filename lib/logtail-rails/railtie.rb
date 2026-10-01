@@ -24,13 +24,20 @@ module Logtail
           end
         end
 
-        # A `config.logger = ...` line after config/application.rb, like the one generated in
-        # config/environments/production.rb, replaces the Better Stack logger without any error. Registered here,
-        # so that it runs after the app's own after_initialize blocks, which may still broadcast to the logger.
+        # Warns about problems with the logger create_default_logger created, unless the integration is turned off.
+        # Registered here, so that it runs after the app's own after_initialize blocks, which may still broadcast to it.
         initializer(:logtail_logger_check, after: :load_config_initializers) do |app|
           app.config.after_initialize do
-            next unless Logtail::Logger.better_stack_logger_created? && Integrations::Rails.enabled?
+            next unless Integrations::Rails.enabled?
 
+            if Logtail::Logger.blank_source_token
+              Kernel.warn("Logtail: the source token passed to Logtail::Logger.create_default_logger is blank, logging to STDOUT instead of sending logs to Better Stack.")
+              next
+            end
+            next unless Logtail::Logger.better_stack_logger_created
+
+            # A `config.logger = ...` line after config/application.rb, like the one generated in
+            # config/environments/production.rb, replaces the Better Stack logger without any error
             loggers = ::Rails.logger.respond_to?(:broadcasts) ? ::Rails.logger.broadcasts : [::Rails.logger]
             next if loggers.any? { |logger| logger.is_a?(Logtail::Logger) }
 

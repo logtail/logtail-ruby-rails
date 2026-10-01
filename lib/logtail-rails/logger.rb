@@ -65,11 +65,10 @@ module Logtail
         io_device = STDOUT
       elsif source_token.blank?
         # Don't break booting the app without the token, e.g. for `assets:precompile` in a Docker build
-        Kernel.warn("Logtail: the source token passed to Logtail::Logger.create_default_logger is blank, logging to STDOUT instead of sending logs to Better Stack.")
+        @blank_source_token = true
         io_device = STDOUT
       else
         io_device = Logtail::LogDevices::HTTP.new(source_token, options)
-        # Checked once the app has booted, see Logtail::Frameworks::Rails::Railtie
         @better_stack_logger_created = true
       end
 
@@ -90,11 +89,11 @@ module Logtail
       logger
     end
 
-    # Whether {create_default_logger} has created a logger that sends logs to Better Stack
-    #
-    # @private
-    def self.better_stack_logger_created?
-      @better_stack_logger_created == true
+    class << self
+      # What {create_default_logger} did, Logtail::Frameworks::Rails::Railtie warns about it once the app has booted
+      #
+      # @private
+      attr_reader :blank_source_token, :better_stack_logger_created
     end
   end
 end
