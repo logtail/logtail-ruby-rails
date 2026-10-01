@@ -4,7 +4,7 @@ gem 'rails', '~> 8.0.0'
 gem 'sidekiq', '>= 7.3.0', require: false
 
 gem 'logtail'
-gem 'logtail-rack'
+gem 'logtail-rack', git: 'https://github.com/logtail/logtail-ruby-rack.git', branch: 'claude/query-string-filters'
 # ActiveSupport passes quirks_mode to JSON.generate until 7.2.4 and 8.1, json 3 no longer accepts it
 gem 'json', '< 3'
 
