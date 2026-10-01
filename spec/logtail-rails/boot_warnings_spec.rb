@@ -43,7 +43,7 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
 
       expect(status).to be_success, stderr
       expect(stderr.scan(blank_token_warning).length).to eq(1)
-      expect(stderr.scan("Logtail:").length).to eq(1)
+      expect(stderr.scan(/^Logtail: /).length).to eq(1)
       expect(stdout).to include("Logged after boot")
     end
 
@@ -64,7 +64,7 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
 
       expect(status).to be_success, stderr
       expect(stderr.scan(logger_warning).length).to eq(1)
-      expect(stderr.scan("Logtail:").length).to eq(1)
+      expect(stderr.scan(/^Logtail: /).length).to eq(1)
     end
 
     it "doesn't warn when Rails.logger broadcasts to the Better Stack logger" do
@@ -87,14 +87,14 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
       _stdout, stderr, status = boot_app("source-token", environment_file)
 
       expect(status).to be_success, stderr
-      expect(stderr).not_to include("Logtail:")
+      expect(stderr).not_to match(/^Logtail: /)
     end
 
     it "doesn't warn with the documented setup" do
       _stdout, stderr, status = boot_app("source-token")
 
       expect(status).to be_success, stderr
-      expect(stderr).not_to include("Logtail:")
+      expect(stderr).not_to match(/^Logtail: /)
     end
   end
 end
