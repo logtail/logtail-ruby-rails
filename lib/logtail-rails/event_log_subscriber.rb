@@ -6,13 +6,24 @@ module Logtail
       # them with all their data to Rails.logger, which sends them to Better Stack.
       class EventLogSubscriber
         # Rails logger instance
-        attr_reader :logger
+        attr_accessor :logger
 
         # Log level to use for logging events
         mattr_accessor :log_level, default: :info
 
         # Allows to disable the subscriber
         mattr_accessor :enabled, default: true
+
+        # Subscribes to Rails.event once. Later calls only hand the events to the new logger, so that
+        # calling Logtail::Logger.create_default_logger again doesn't log every event twice.
+        def self.subscribe(logger)
+          if @subscriber
+            @subscriber.logger = logger
+          else
+            @subscriber = new(logger)
+            ::Rails.event.subscribe(@subscriber)
+          end
+        end
 
         # Initialize the subscriber with a logger instance
         def initialize(logger)
