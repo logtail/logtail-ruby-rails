@@ -14,6 +14,8 @@ Experience SQL-compatible structured log management based on ClickHouse. [Learn 
 
 [Getting started ⇗](https://betterstack.com/docs/logs/ruby-and-rails/#logging-from-rails)
 
+[Example project](example-project/README.md): logging, structured data and [adding context to every log line of a request](example-project/README.md#context).
+
 ## Need help?
 Please let us know at [hello@betterstack.com](mailto:hello@betterstack.com). We're happy to help!
 

@@ -185,12 +185,53 @@ This will generate the following JSON output:
 }
 ```
 
-We will automatically add the information about the current user to each log if you're using Ruby on Rails and the Devise gem.
+We will automatically add the information about the current user to each log if you're using Ruby on Rails with Devise (or any other Warden-based authentication) or with Clearance.
 
-If you're not using Devise or you want to log some additional information for every request your Rails app handles, you can easily implement this using Rails' `around_action` in your application controller. A simple implementation could look like this:
+### Context for every log line of a request
+
+The request and response lines (`Started GET "/" for 127.0.0.1` and `Completed 200 OK in 12.3ms`) are logged by a Rack middleware, before the request reaches your controller. Context set from inside a controller is therefore attached to the logs from the controller action on, but not to these two lines. To attach context to every log line of a request, set it in a Rack middleware instead.
+
+The user context from Devise or Clearance is set this way, by the `Logtail::Integrations::Rack::UserContext` middleware. If you authenticate differently, give it a lambda that finds the user in the Rack environment and returns a hash, or `nil` when nobody is signed in:
 
 ```ruby
-class ApplicationController < ActionController::Base
+# config/initializers/logtail.rb
+Logtail::Integrations::Rack::UserContext.custom_user_hash = lambda do |rack_env|
+  user_id = rack_env["rack.session"]["user_id"]
+  user = User.find_by(id: user_id) if user_id
+  user && { id: user.id, email: user.email }
+end
+```
+
+The hash is logged as `context.user` on every log line of the request, including the request and response lines. The lambda runs on every request, so keep it cheap. It can read anything from the Rack environment, for example an API token from `rack_env["HTTP_AUTHORIZATION"]`.
+
+For any other per-request context (a tenant, an API client, a GraphQL operation name), write your own middleware that wraps the request in `Logtail.with_context` and insert it before the middleware that logs the request and response lines:
+
+```ruby
+# config/initializers/logtail.rb
+class LogtailTenantContext
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    tenant = env["HTTP_X_TENANT"]
+    return @app.call(env) unless tenant
+
+    Logtail.with_context(tenant: { name: tenant }) { @app.call(env) }
+  end
+end
+
+Rails.application.config.middleware.insert_before Logtail::Integrations::Rack::HTTPEvents, LogtailTenantContext
+```
+
+Inserting it before `Logtail::Integrations::Rack::HTTPEvents` also places it after your authentication middleware (such as Warden), so the session and the signed-in user are already available in `env`.
+
+### Context from a controller
+
+If the user is only known once your controller runs (for example, you authenticate from a token in a `before_action`), you can still set the context with Rails' `around_action`. It covers the logs from the controller action and everything it calls, but not the request and response lines, which are logged before the action runs. A simple implementation could look like this:
+
+```ruby
+class ApplicationController < ActionController::Base # or ActionController::API
   around_action :with_logtail_context
 
   private
@@ -202,7 +243,7 @@ class ApplicationController < ActionController::Base
         yield
       end
     end
-    
+
     def user_context
       Logtail::Contexts::User.new(
         id: current_user.id,
