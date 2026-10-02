@@ -139,12 +139,43 @@ RSpec.describe Logtail::Integrations::Rails::ErrorEvent do
       expect(response_statuses).to eq([404, 500])
     end
 
-    it "should log the error at fatal even when config.action_dispatch.debug_exception_log_level is :error" do
+    it "should log the error at config.action_dispatch.debug_exception_log_level, :error with load_defaults 7.1 or later" do
       skip("config.action_dispatch.debug_exception_log_level is new in Rails 7.1") unless ::Rails.application.env_config.key?("action_dispatch.debug_exception_log_level")
 
       dispatch_rendering_exceptions("/runtime_error", "action_dispatch.debug_exception_log_level" => ::Logger::ERROR)
 
+      expect(error_rows.map { |row| [row["level"], row["message"]] }).to eq([["error", "RuntimeError (Boom!)"]])
+      expect(response_statuses).to eq([500])
+    end
+
+    it "should log every error, rescued responses too, at warn when config.action_dispatch.debug_exception_log_level is :warn" do
+      skip("config.action_dispatch.debug_exception_log_level is new in Rails 7.1") unless ::Rails.application.env_config.key?("action_dispatch.debug_exception_log_level")
+
+      dispatch_rendering_exceptions("/runtime_error", "action_dispatch.debug_exception_log_level" => ::Logger::WARN)
+      dispatch_rendering_exceptions("/record_not_found", "action_dispatch.debug_exception_log_level" => ::Logger::WARN)
+
+      expect(error_rows.map { |row| [row["level"], row["message"]] }).to eq([["warn", "RuntimeError (Boom!)"], ["warn", "ActiveRecord::RecordNotFound (Couldn't find User)"]])
+      expect(response_statuses).to eq([500, 404])
+    end
+
+    it "should log the error at fatal, Rails' default, when the app doesn't set config.action_dispatch.debug_exception_log_level" do
+      skip("config.action_dispatch.debug_exception_log_level is new in Rails 7.1") unless ::Rails.application.env_config.key?("action_dispatch.debug_exception_log_level")
+
+      # The spec app neither sets it nor loads the 7.1 defaults, so it has the railtie's :fatal
+      expect(::Rails.application.env_config["action_dispatch.debug_exception_log_level"]).to eq(::Logger::FATAL)
+
+      dispatch_rendering_exceptions("/runtime_error")
+
       expect(error_rows.map { |row| [row["level"], row["message"]] }).to eq([["fatal", "RuntimeError (Boom!)"]])
+    end
+
+    it "should log every error at fatal on Rails versions without config.action_dispatch.debug_exception_log_level" do
+      skip("config.action_dispatch.debug_exception_log_level exists since Rails 7.1") if ::Rails.application.env_config.key?("action_dispatch.debug_exception_log_level")
+
+      dispatch_rendering_exceptions("/runtime_error")
+      dispatch_rendering_exceptions("/record_not_found")
+
+      expect(error_rows.map { |row| [row["level"], row["message"]] }).to eq([["fatal", "RuntimeError (Boom!)"], ["fatal", "ActiveRecord::RecordNotFound (Couldn't find User)"]])
     end
 
     # Renders exceptions as error pages like a production app, instead of raising them
