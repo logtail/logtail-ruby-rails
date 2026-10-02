@@ -53,6 +53,8 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
       expect(result["event_log_subscriber_enabled"]).to eq(false)
       expect(result["logtail_logger"]).to eq(true)
       expect(result["log_file"]).to include("Structured log line")
+      # Rails opens the log file itself, so Logger doesn't write its "# Logfile created on …" header
+      expect(result["log_file"]).not_to start_with("# Logfile created")
     end
 
     it "replaces the STDOUT logger create_default_logger returns in the test environment" do
@@ -60,6 +62,7 @@ RSpec.describe Logtail::Frameworks::Rails::Railtie do
 
       expect(result["middlewares"]).to eq([])
       expect(result["log_file"]).to include("Structured log line")
+      expect(result["log_file"]).not_to start_with("# Logfile created")
     end
 
     it "keeps the integration on by default" do
