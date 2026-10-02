@@ -3,8 +3,8 @@ source 'https://rubygems.org'
 gem 'rails', '~> 6.0.0'
 gem 'sidekiq', '>= 7.3.0', require: false if RUBY_VERSION >= '2.7.0'
 
-gem 'logtail', git: 'https://github.com/logtail/logtail-ruby.git', branch: 'claude/json-generate'
-gem 'logtail-rack', git: 'https://github.com/logtail/logtail-ruby-rack.git', branch: 'claude/json-generate'
+gem 'logtail'
+gem 'logtail-rack'
 
 if RUBY_VERSION >= "3.4.0"
   gem 'mutex_m'
