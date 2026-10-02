@@ -18,9 +18,11 @@ module Logtail
         # We determine this when the app loads to avoid the overhead on a per request basis.
         EXCEPTION_WRAPPER_TAKES_CLEANER = defined?(::ActionDispatch::ExceptionWrapper) &&
           !::ActionDispatch::ExceptionWrapper.instance_methods.include?(:env)
-        # config.action_dispatch.log_rescued_responses (Rails 7.0+), as ActionDispatch::DebugExceptions
-        # reads it. This gem silences its logging and logs the exception here instead.
+        # config.action_dispatch.log_rescued_responses (Rails 7.0+) and
+        # config.action_dispatch.debug_exception_log_level (Rails 7.1+), as ActionDispatch::DebugExceptions
+        # reads them. This gem silences its logging and logs the exception here instead.
         LOG_RESCUED_RESPONSES_KEY = "action_dispatch.log_rescued_responses".freeze
+        DEBUG_EXCEPTION_LOG_LEVEL_KEY = "action_dispatch.debug_exception_log_level".freeze
 
         def call(env)
           begin
@@ -38,7 +40,7 @@ module Logtail
         def log_exception(env, exception)
           return if !log_exception?(env, exception)
 
-          Config.instance.logger.fatal do
+          Config.instance.logger.add(env[DEBUG_EXCEPTION_LOG_LEVEL_KEY] || ::Logger::FATAL) do
             backtrace = extract_backtrace(env, exception)
             Events::Error.new(
               name: exception.class.name,
