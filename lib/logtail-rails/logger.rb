@@ -49,6 +49,10 @@ module Logtail
     def self.create_logger(*io_devices_and_loggers)
       logger = Logtail::Logger.new(*io_devices_and_loggers)
 
+      # Rails applies config.log_level to Rails.logger while booting, but not to a logger added with broadcast_to later
+      log_level = Rails.application.config.log_level if ENV['LOG_LEVEL'].blank? && Rails.application
+      logger.level = ::ActiveSupport::Logger.const_get(log_level.to_s.upcase) if log_level
+
       tagged_logging_supported = Rails::VERSION::MAJOR >= 7 || Rails::VERSION::MAJOR == 6 && Rails::VERSION::MINOR >= 1
       logger = ::ActiveSupport::TaggedLogging.new(logger) if tagged_logging_supported
 
@@ -61,10 +65,15 @@ module Logtail
       options[:ingesting_port] ||= options[:telemetry_port] if options[:telemetry_port].present?
       options[:ingesting_scheme] ||= options[:telemetry_scheme] if options[:telemetry_scheme].present?
 
-      if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
-        io_device = Logtail::LogDevices::HTTP.new(source_token, options)
-      else
+      if ENV['LOGTAIL_SKIP_LOGS'].present? || Rails.env.test?
         io_device = STDOUT
+      elsif source_token.blank?
+        # Don't break booting the app without the token, e.g. for `assets:precompile` in a Docker build
+        @blank_source_token = true
+        io_device = STDOUT
+      else
+        io_device = Logtail::LogDevices::HTTP.new(source_token, options)
+        @better_stack_logger_created = true
       end
 
       logger = self.create_logger(io_device)
@@ -79,9 +88,16 @@ module Logtail
       end
 
       # For Rails 8.1 and above, subscribe to the event system
-      Rails.event.subscribe(Logtail::Integrations::Rails::EventLogSubscriber.new(logger)) if Rails.respond_to?(:event)
+      Logtail::Integrations::Rails::EventLogSubscriber.subscribe(logger) if Rails.respond_to?(:event)
 
       logger
+    end
+
+    class << self
+      # What {create_default_logger} did, Logtail::Frameworks::Rails::Railtie warns about it once the app has booted
+      #
+      # @private
+      attr_reader :blank_source_token, :better_stack_logger_created
     end
   end
 end
