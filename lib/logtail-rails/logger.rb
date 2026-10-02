@@ -65,10 +65,15 @@ module Logtail
       options[:ingesting_port] ||= options[:telemetry_port] if options[:telemetry_port].present?
       options[:ingesting_scheme] ||= options[:telemetry_scheme] if options[:telemetry_scheme].present?
 
-      if ENV['LOGTAIL_SKIP_LOGS'].blank? && !Rails.env.test?
-        io_device = Logtail::LogDevices::HTTP.new(source_token, options)
-      else
+      if ENV['LOGTAIL_SKIP_LOGS'].present? || Rails.env.test?
         io_device = STDOUT
+      elsif source_token.blank?
+        # Don't break booting the app without the token, e.g. for `assets:precompile` in a Docker build
+        @blank_source_token = true
+        io_device = STDOUT
+      else
+        io_device = Logtail::LogDevices::HTTP.new(source_token, options)
+        @better_stack_logger_created = true
       end
 
       logger = self.create_logger(io_device)
@@ -86,6 +91,13 @@ module Logtail
       Logtail::Integrations::Rails::EventLogSubscriber.subscribe(logger) if Rails.respond_to?(:event)
 
       logger
+    end
+
+    class << self
+      # What {create_default_logger} did, Logtail::Frameworks::Rails::Railtie warns about it once the app has booted
+      #
+      # @private
+      attr_reader :blank_source_token, :better_stack_logger_created
     end
   end
 end
