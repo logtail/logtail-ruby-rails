@@ -122,5 +122,52 @@ RSpec.describe Logtail::Logger, :rails_23 => true do
 
       expect(Sidekiq.logger).to eq(log_double)
     end
+
+    context "when called more than once" do
+      let(:io) { StringIO.new }
+
+      # spec_helper.rb makes every EventLogSubscriber log to Rails.logger
+      around(:each) do |example|
+        with_rails_logger(Logtail::Logger.new(io)) { example.run }
+      end
+
+      it "should log each Rails.event once" do
+        skip("Rails.event exists in Rails 8.1 and higher") unless Rails.respond_to?(:event)
+
+        Logtail::Logger.create_default_logger("foo")
+        Logtail::Logger.create_default_logger("foo")
+        Rails.event.notify("logger_spec.created", id: 1)
+
+        expect(io.string.lines.grep(/logger_spec\.created/).length).to eq(1)
+      end
+    end
+
+    context "with config.log_level" do
+      around(:each) do |example|
+        log_level = Rails.application.config.log_level
+        Rails.application.config.log_level = :info
+        example.run
+        Rails.application.config.log_level = log_level
+      end
+
+      before do
+        allow(Logtail::Logger).to receive(:create_logger).and_call_original
+      end
+
+      # Rails sets config.log_level on Rails.logger, but not on a logger added with broadcast_to after boot
+      it "should use it as the level" do
+        logger = Logtail::Logger.create_default_logger("foo")
+
+        expect(logger.level).to eq(::Logger::INFO)
+      end
+
+      it "should prefer the LOG_LEVEL environment variable" do
+        ENV["LOG_LEVEL"] = "warn"
+        logger = Logtail::Logger.create_default_logger("foo")
+        ENV.delete("LOG_LEVEL")
+
+        expect(logger.level).to eq(::Logger::WARN)
+      end
+    end
   end
 end
