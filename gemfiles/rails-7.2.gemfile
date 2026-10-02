@@ -6,6 +6,6 @@ gem 'rails', '~> 7.2.4'
 gem 'sidekiq', '>= 7.3.0', require: false
 
 gem 'logtail'
-gem 'logtail-rack', git: 'https://github.com/logtail/logtail-ruby-rack.git', branch: 'claude/response-on-exception'
+gem 'logtail-rack'
 
 gemspec :path => '../'
