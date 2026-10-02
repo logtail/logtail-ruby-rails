@@ -14,7 +14,7 @@ Experience SQL-compatible structured log management based on ClickHouse. [Learn 
 
 [Getting started ⇗](https://betterstack.com/docs/logs/ruby-and-rails/#logging-from-rails)
 
-To turn the integration off in an environment, e.g. development or test, set `config.logtail.enabled = false` in `config/environments/<environment>.rb`. Rails then logs to `log/<environment>.log` as usual, even if `config/application.rb` creates the Better Stack logger.
+[Example project](example-project/README.md): logging, structured data and [adding context to every log line of a request](example-project/README.md#context).
 
 ## Need help?
 Please let us know at [hello@betterstack.com](mailto:hello@betterstack.com). We're happy to help!
