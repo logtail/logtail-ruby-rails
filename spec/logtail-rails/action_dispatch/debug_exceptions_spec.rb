@@ -38,10 +38,11 @@ RSpec.describe Logtail::Integrations::ActionDispatch::DebugExceptions do
       suppress(RuntimeError) { dispatch_rails_request("/exception") }
 
       lines = clean_lines(io.string.split("\n"))
-      expect(lines.length).to eq(3)
+      expect(lines.length).to eq(4)
       expect(lines[2]).to include('RuntimeError (boom)')
       expect(lines[2]).to include('fatal')
       expect(lines[2]).to include("\"error\":{\"name\":\"RuntimeError\",\"message\":\"boom\",\"backtrace_json\":\"[")
+      expect(lines[3]).to include("Completed 500 Internal Server Error in")
     end
 
     # Remove blank lines since Rails does this to space out requests in the logs

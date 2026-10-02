@@ -75,6 +75,36 @@ RSpec.describe Logtail::Integrations::ActionView::LogSubscriber do
           end
         end
       end
+
+      context "with a debug level" do
+        around(:each) do |example|
+          old_level = logger.level
+          logger.level = ::Logger::DEBUG
+          example.run
+          logger.level = old_level
+        end
+
+        it "should not log the start of the rendering" do
+          dispatch_rails_request("/action_view_log_subscriber")
+          expect(io.string.scan("Rendered spec/support/rails/templates/template.html").length).to eq(1)
+          expect(io.string).not_to include("Rendering")
+        end
+      end
+    end
+  end
+
+  if defined?(::ActionView::LogSubscriber::Start)
+    describe "integrate!" do
+      # Since Rails 7.1, ActionView::LogSubscriber.attach_to subscribes these listeners next to the
+      # subscriber itself. They log "Rendering ..." at debug level.
+      it "should remove the listeners logging the start of a rendering" do
+        notifier = ::ActiveSupport::Notifications.notifier
+        listeners = %w(render_template.action_view render_layout.action_view).flat_map do |name|
+          notifier.respond_to?(:all_listeners_for) ? notifier.all_listeners_for(name) : notifier.listeners_for(name)
+        end
+
+        expect(listeners.map(&:delegate).grep(::ActionView::LogSubscriber::Start)).to be_empty
+      end
     end
   end
 

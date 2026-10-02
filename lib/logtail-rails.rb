@@ -39,11 +39,18 @@ module Logtail
       def self.integrate!
         return false if !enabled?
 
+        # Log the status Rails responds with when the app raises, the way ShowExceptions
+        # determines it: from config.action_dispatch.rescue_responses, 500 by default.
+        Logtail::Integrations::Rack::HTTPEvents.status_for_exception = lambda do |exception|
+          ::ActionDispatch::ExceptionWrapper.new(nil, exception).status_code
+        end
+
         ActionController.integrate!
         ActionDispatch.integrate!
         ActionView.integrate!
         ActiveRecord.integrate!
         RackLogger.integrate!
+        filter_parameters_in_urls(::Rails.application.config.filter_parameters)
       end
 
       def self.enabled=(value)
@@ -64,6 +71,16 @@ module Logtail
       def self.middlewares
         @middlewares ||= [Logtail::Integrations::Rack::HTTPContext, SessionContext, Logtail::Integrations::Rack::UserContext,
           Logtail::Integrations::Rack::HTTPEvents, Logtail::Integrations::Rails::ErrorEvent].select(&:enabled?)
+      end
+
+      # Filters the app's filter_parameters from the query strings and the Referer and Location
+      # URLs that Rack::HTTPEvents logs, unless the app customised its query_string_filters.
+      # Procs are left out: they rewrite values, while query string filters match names.
+      def self.filter_parameters_in_urls(filter_parameters)
+        http_events = Logtail::Integrations::Rack::HTTPEvents
+        return if http_events.query_string_filters != http_events::DEFAULT_QUERY_STRING_FILTERS
+
+        http_events.query_string_filters = filter_parameters.reject { |filter| filter.is_a?(Proc) }
       end
     end
   end

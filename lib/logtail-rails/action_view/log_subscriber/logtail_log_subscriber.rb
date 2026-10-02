@@ -76,9 +76,12 @@ module Logtail
               super
 
               if ::Rails::VERSION::MAJOR > 7 || ::Rails::VERSION::MAJOR == 7 && ::Rails::VERSION::MINOR >= 1
-                # Clean extra listeners subscribed in parent's attach_to method
-                ::ActiveSupport::Notifications.notifier.listeners_for("render_template.action_view")
-                  .concat(::ActiveSupport::Notifications.notifier.listeners_for("render_layout.action_view")).flatten
+                # Clean extra listeners subscribed in parent's attach_to method. Since Rails 7.2 they count as
+                # silenced while ActionView::Base.logger is nil, as it is at boot, and listeners_for skips those.
+                # all_listeners_for returns the notifier's cached array, so don't concat onto it.
+                notifier = ::ActiveSupport::Notifications.notifier
+                %w(render_template.action_view render_layout.action_view)
+                  .flat_map { |name| notifier.respond_to?(:all_listeners_for) ? notifier.all_listeners_for(name) : notifier.listeners_for(name) }
                   .filter { |listener| listener.delegate.class == ::ActionView::LogSubscriber::Start }
                   .each { |listener| ActiveSupport::Notifications.unsubscribe(listener) }
               end
