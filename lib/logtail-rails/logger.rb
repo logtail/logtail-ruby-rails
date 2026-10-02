@@ -49,6 +49,10 @@ module Logtail
     def self.create_logger(*io_devices_and_loggers)
       logger = Logtail::Logger.new(*io_devices_and_loggers)
 
+      # Rails applies config.log_level to Rails.logger while booting, but not to a logger added with broadcast_to later
+      log_level = Rails.application.config.log_level if ENV['LOG_LEVEL'].blank? && Rails.application
+      logger.level = ::ActiveSupport::Logger.const_get(log_level.to_s.upcase) if log_level
+
       tagged_logging_supported = Rails::VERSION::MAJOR >= 7 || Rails::VERSION::MAJOR == 6 && Rails::VERSION::MINOR >= 1
       logger = ::ActiveSupport::TaggedLogging.new(logger) if tagged_logging_supported
 
@@ -84,7 +88,7 @@ module Logtail
       end
 
       # For Rails 8.1 and above, subscribe to the event system
-      Rails.event.subscribe(Logtail::Integrations::Rails::EventLogSubscriber.new(logger)) if Rails.respond_to?(:event)
+      Logtail::Integrations::Rails::EventLogSubscriber.subscribe(logger) if Rails.respond_to?(:event)
 
       logger
     end
