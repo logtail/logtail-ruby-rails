@@ -26,7 +26,10 @@ module Logtail
           if app.config.logger.is_a?(Logtail::Logger)
             log_file = app.paths["log"].first
             FileUtils.mkdir_p(File.dirname(log_file))
-            app.config.logger = Logtail::Logger.create_logger(log_file)
+            # Opened like Rails opens it: Logger only writes its "# Logfile created" header into files it creates
+            file = File.open(log_file, "a")
+            file.binmode
+            app.config.logger = Logtail::Logger.create_logger(file)
           end
         end
 
