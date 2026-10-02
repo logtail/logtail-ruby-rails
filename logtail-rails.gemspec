@@ -27,8 +27,8 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency "logtail", "~> 0.1", ">= 0.1.14"
-  spec.add_runtime_dependency "logtail-rack", "~> 0.1"
+  spec.add_runtime_dependency "logtail", "~> 0.1", ">= 0.1.21"
+  spec.add_runtime_dependency "logtail-rack", "~> 0.2", ">= 0.2.9"
 
   spec.add_runtime_dependency 'activerecord', '>= 5.0.0'
   spec.add_runtime_dependency 'railties', '>= 5.0.0'

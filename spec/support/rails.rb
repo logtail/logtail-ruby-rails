@@ -15,6 +15,8 @@ class RailsApp < Rails::Application
 
   # This ensures our tests fail, otherwise exceptions get swallowed by ActionDispatch::DebugExceptions
   config.action_dispatch.show_exceptions = false
+  # What ActiveRecord's railtie adds, which these specs don't load
+  config.action_dispatch.rescue_responses.merge!("ActiveRecord::RecordNotFound" => :not_found)
   config.active_support.deprecation = :stderr
   config.eager_load = false
   config.hosts = nil
