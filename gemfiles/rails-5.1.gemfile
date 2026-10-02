@@ -4,7 +4,7 @@ gem 'rails', '~> 5.1.0'
 gem 'sidekiq', '>= 7.3.0', require: false if RUBY_VERSION >= '2.7.0'
 
 gem 'logtail'
-gem 'logtail-rack', git: 'https://github.com/logtail/logtail-ruby-rack.git', branch: 'claude/query-string-filters'
+gem 'logtail-rack'
 
 if RUBY_PLATFORM == "java"
   gem 'mime-types', '2.6.2'

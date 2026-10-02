@@ -4,6 +4,6 @@ gem 'rails', '~> 8.1.0'
 gem 'sidekiq', '>= 7.3.0', require: false
 
 gem 'logtail'
-gem 'logtail-rack', git: 'https://github.com/logtail/logtail-ruby-rack.git', branch: 'claude/query-string-filters'
+gem 'logtail-rack'
 
 gemspec :path => '../'
