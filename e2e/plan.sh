@@ -7,7 +7,8 @@
 #           floors
 #   rails7  the newest Rails 7 release on Ruby 3.2 with the newest logtail and logtail-rack: the step between the
 #           floor and the newest Rails
-#   latest  the newest stable Ruby (endoflife.date) with the newest Rails, logtail and logtail-rack releases
+#   latest  the newest stable Ruby that ruby/setup-ruby can install, with the newest Rails, logtail and logtail-rack
+#           releases
 #   canary  ruby-head with the current commit of Rails' main branch, and whatever logtail and logtail-rack Bundler picks
 # Env: LEG (all, floor, rails7, latest or canary), CLIENT_FROM (checkout or rubygems), and RUBY_VERSION_INPUT and
 #      RAILS_VERSION_INPUT: an exact Ruby, and an exact Rails release or a commit of Rails' main branch, that replace the
@@ -16,6 +17,8 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 RUBYGEMS=https://rubygems.org/api/v1
+# What ruby/setup-ruby@v1 can install. A Ruby released today is in it once setup-ruby supports it.
+SETUP_RUBY_VERSIONS_URL=https://raw.githubusercontent.com/ruby/setup-ruby/v1/ruby-builder-versions.json
 # Job names become artifact names (e2e-summary-<job name>), which must not contain any of these.
 NOT_IN_NAMES='[:"<>|*?/\\]'
 
@@ -63,7 +66,8 @@ for leg in $LEGS; do
       logtail=$(newest logtail)
       logtail_rack=$(newest logtail-rack) ;;
     latest)
-      ruby=$(get https://endoflife.date/api/ruby.json | jq -er 'max_by(.cycle | split(".") | map(tonumber)) | .latest')
+      # The newest X.Y.Z in setup-ruby's list of CRuby builds, which also holds previews, head and debug builds.
+      ruby=$(get "$SETUP_RUBY_VERSIONS_URL" | jq -er '.ruby | map(select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))) | max_by(split(".") | map(tonumber))')
       rails=$(newest rails)
       logtail=$(newest logtail)
       logtail_rack=$(newest logtail-rack) ;;

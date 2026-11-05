@@ -10,8 +10,8 @@ name: E2E
 #           that release allows, with logtail and logtail-rack at logtail-rails.gemspec's floors. The gemspec allows
 #           Rails 5.0 and Ruby 2.5, which only the unit tests (main.yml) cover.
 #   rails7  the newest Rails 7 on Ruby 3.2, with the newest logtail and logtail-rack
-#   latest  the newest stable Ruby with the newest Rails, logtail and logtail-rack releases; Bundler failing to install
-#           exactly those fails the job
+#   latest  the newest stable Ruby that ruby/setup-ruby can install, with the newest Rails, logtail and logtail-rack
+#           releases; Bundler failing to install exactly those fails the job
 #   canary  ruby-head with the current commit of Rails' main branch
 # The floor and the Rails 7 leg run on the oldest Ubuntu image GitHub offers, latest and canary on ubuntu-latest, so a
 # new runner image is covered as well.
