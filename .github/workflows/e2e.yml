@@ -6,7 +6,7 @@ name: E2E
 # stops the server with Ctrl-C, reads the stored rows back through the testing team's SQL API connection, checks them
 # exactly against e2e/expected.json (nothing missing, extra or duplicated), and deletes the source again, together with
 # sources of earlier runs left behind for more than 3 hours. e2e/plan.sh plans four legs:
-#   floor   the oldest Rails the example runs on (its config.load_defaults, 7.0) at its newest patch, on the oldest Ruby
+#   floor   the oldest Rails the example runs on (its config.load_defaults, 7.1) at its newest patch, on the oldest Ruby
 #           that release allows, with logtail and logtail-rack at logtail-rails.gemspec's floors. The gemspec allows
 #           Rails 5.0 and Ruby 2.5, which only the unit tests (main.yml) cover.
 #   rails7  the newest Rails 7 on Ruby 3.2, with the newest logtail and logtail-rack

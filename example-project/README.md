@@ -9,7 +9,7 @@ You can download the example project from GitHub directly or you can clone it to
 bundle install
 ```
 
-This will install all dependencies listed in the `Gemfile`. The example runs on Rails 7.0 and newer.
+This will install all dependencies listed in the `Gemfile`. The example runs on Rails 7.1 and newer.
 
 `config/application.rb` reads your source token and ingesting host from the environment. You can find them by going to [Sources](https://telemetry.betterstack.com/team/0/sources) -> Configure in Better Stack.
 

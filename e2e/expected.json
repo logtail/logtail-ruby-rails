@@ -5,19 +5,16 @@
     "message_prefix": "Generating image variants require the image_processing gem."
   },
   {
-    "since_rails": "7.1",
     "level": "debug",
     "message_prefix": "  \u001b[1m\u001b[35m (",
     "contains": {"sql_query_executed": {"sql": "CREATE TABLE \"schema_migrations\" (\"version\" varchar NOT NULL PRIMARY KEY)"}}
   },
   {
-    "since_rails": "7.1",
     "level": "debug",
     "message_prefix": "  \u001b[1m\u001b[35m (",
     "contains": {"sql_query_executed": {"sql": "CREATE TABLE \"ar_internal_metadata\" (\"key\" varchar NOT NULL PRIMARY KEY, \"value\" varchar, \"created_at\" datetime(6) NOT NULL, \"updated_at\" datetime(6) NOT NULL)"}}
   },
   {
-    "since_rails": "7.1",
     "level": "debug",
     "message_prefix": "  \u001b[1m\u001b[36mActiveRecord::SchemaMigration Load (",
     "contains": {"sql_query_executed": {"sql": "SELECT \"schema_migrations\".\"version\" FROM \"schema_migrations\" ORDER BY \"schema_migrations\".\"version\" ASC"}}
@@ -100,7 +97,7 @@
     "contains": {"controller_called": {"controller": "ExampleController", "action": "raise_error"}, "context": {"http": {"path": "/raise_error"}}}
   },
   {
-    "level": "fatal",
+    "level": "error",
     "message": "ArgumentError (Something went wrong, this action raised an exception!)",
     "contains": {"error": {"name": "ArgumentError", "message": "Something went wrong, this action raised an exception!", "backtrace_json": ["app/controllers/example_controller.rb:55:in "]}, "context": {"http": {"path": "/raise_error"}}}
   },

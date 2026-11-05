@@ -8,8 +8,8 @@ Bundler.require(*Rails.groups)
 
 module ExampleProject
   class Application < Rails::Application
-    # Initialize configuration defaults of Rails 7.0, the oldest Rails this example runs on.
-    config.load_defaults 7.0
+    # Initialize configuration defaults of Rails 7.1, the oldest Rails this example runs on.
+    config.load_defaults 7.1
 
     # Configuration for the application, engines, and railties goes here.
     #
