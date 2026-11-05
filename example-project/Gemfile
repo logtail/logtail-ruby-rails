@@ -1,10 +1,8 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.3.4"
-
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.1.0.rc1"
+gem "rails", "~> 8.1.0"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -71,4 +69,4 @@ group :test do
   gem "webdrivers"
 end
 
-gem "logtail-rails", "~> 0.2.12"
+gem "logtail-rails", "~> 0.3"

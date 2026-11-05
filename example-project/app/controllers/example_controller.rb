@@ -38,13 +38,20 @@ class ExampleController < ApplicationController
         )
 
         # Since Rails 8.1, you can also use the Rails.event to send events with structured data to Better Stack.
-        Rails.event.notify("My first event", user_id: 123, email: "user@example.com")
-        
-        # You can add context to all events
-        Rails.event.set_context(request_id: "abc123", shop_id: 456)
-        # And tags specific events
-        Rails.event.tagged("api") do
-            Rails.event.notify("My tagged event with additional context", user_id: 123, email: "user@example.com")
+        if Rails.respond_to?(:event)
+            Rails.event.notify("My first event", user_id: 123, email: "user@example.com")
+
+            # You can add context to all events
+            Rails.event.set_context(request_id: "abc123", shop_id: 456)
+            # And tags specific events
+            Rails.event.tagged("api") do
+                Rails.event.notify("My tagged event with additional context", user_id: 123, email: "user@example.com")
+            end
         end
+    end
+
+    # Exceptions raised in an action are sent to Better Stack too, with their class, message and backtrace
+    def raise_error
+        raise ArgumentError, "Something went wrong, this action raised an exception!"
     end
 end
