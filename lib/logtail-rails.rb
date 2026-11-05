@@ -2,6 +2,10 @@ require "logtail-rails/overrides"
 
 require "logtail"
 
+# Rails' own files rely on Active Support being loaded first, and on Rails main (8.2.0.alpha) rails/railtie
+# fails without it: "uninitialized constant ActiveSupport::DescendantsTracker::WeakSet". It comes after logtail,
+# which loads Ruby's logger: older Active Support releases need that with concurrent-ruby 1.3.5 or newer.
+require "active_support"
 require "rails/railtie"
 require "active_record"
 require "rack"
