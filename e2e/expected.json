@@ -1,0 +1,112 @@
+[
+  {
+    "since_rails": "8.1",
+    "level": "warn",
+    "message_prefix": "Generating image variants require the image_processing gem."
+  },
+  {
+    "since_rails": "7.1",
+    "level": "debug",
+    "message_prefix": "  \u001b[1m\u001b[35m (",
+    "contains": {"sql_query_executed": {"sql": "CREATE TABLE \"schema_migrations\" (\"version\" varchar NOT NULL PRIMARY KEY)"}}
+  },
+  {
+    "since_rails": "7.1",
+    "level": "debug",
+    "message_prefix": "  \u001b[1m\u001b[35m (",
+    "contains": {"sql_query_executed": {"sql": "CREATE TABLE \"ar_internal_metadata\" (\"key\" varchar NOT NULL PRIMARY KEY, \"value\" varchar, \"created_at\" datetime(6) NOT NULL, \"updated_at\" datetime(6) NOT NULL)"}}
+  },
+  {
+    "since_rails": "7.1",
+    "level": "debug",
+    "message_prefix": "  \u001b[1m\u001b[36mActiveRecord::SchemaMigration Load (",
+    "contains": {"sql_query_executed": {"sql": "SELECT \"schema_migrations\".\"version\" FROM \"schema_migrations\" ORDER BY \"schema_migrations\".\"version\" ASC"}}
+  },
+  {
+    "level": "info",
+    "message": "Started GET \"/send_logs\"",
+    "contains": {"event": {"http_request_received": {"method": "GET", "path": "/send_logs", "host": "127.0.0.1", "port": 3000}}, "context": {"http": {"method": "GET", "path": "/send_logs", "remote_addr": "127.0.0.1"}}}
+  },
+  {
+    "level": "info",
+    "message": "Processing by ExampleController#send_logs as */*",
+    "contains": {"controller_called": {"controller": "ExampleController", "action": "send_logs"}, "context": {"http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "debug",
+    "message": "Hey! I am debuging!",
+    "contains": {"context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 12, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "info",
+    "message": "You know what's interesting? Logtail !",
+    "contains": {"context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 15, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "warn",
+    "message": "Something might not be quite right...",
+    "contains": {"context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 18, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "error",
+    "message": "Oops! Something went wrong.",
+    "contains": {"context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 21, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "fatal",
+    "message": "Application crashed! Needs to be fixed ASAP!",
+    "contains": {"context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 24, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "info",
+    "message": "log message with tags",
+    "contains": {"tags": ["tag1", "tag2"], "context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 28, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "warn",
+    "message": "log structured data",
+    "contains": {"name": {"first": "John", "last": "Smith"}, "id": 123456, "context": {"runtime": {"file": "app/controllers/example_controller.rb", "line": 32, "frame_label": "send_logs"}, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "since_rails": "8.1",
+    "level": "info",
+    "message_prefix": "[My first event] user_id=123 email=user@example.com at ",
+    "contains": {"message": "app/controllers/example_controller.rb:42", "event_name": "My first event", "payload": {"user_id": 123, "email": "user@example.com"}, "source_location": {"filepath": "app/controllers/example_controller.rb", "lineno": 42, "label": "send_logs"}, "context": {"http": {"path": "/send_logs"}}}
+  },
+  {
+    "since_rails": "8.1",
+    "level": "info",
+    "message_prefix": "[My tagged event with additional context] user_id=123 email=user@example.com at ",
+    "contains": {"message": "app/controllers/example_controller.rb:48", "event_name": "My tagged event with additional context", "payload": {"user_id": 123, "email": "user@example.com"}, "tags": ["api"], "source_location": {"filepath": "app/controllers/example_controller.rb", "lineno": 48, "label": "send_logs"}, "context": {"request_id": "abc123", "shop_id": 456, "http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "info",
+    "message_prefix": "  Rendered example/send_logs.html.erb within layouts/application (",
+    "contains": {"template_rendered": {"name": "example/send_logs.html.erb"}, "context": {"http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "info",
+    "message_prefix": "Completed 200 OK in ",
+    "contains": {"event": {"http_response_sent": {"status": 200}}, "context": {"http": {"path": "/send_logs"}}}
+  },
+  {
+    "level": "info",
+    "message": "Started GET \"/raise_error\"",
+    "contains": {"event": {"http_request_received": {"method": "GET", "path": "/raise_error", "host": "127.0.0.1", "port": 3000}}, "context": {"http": {"method": "GET", "path": "/raise_error", "remote_addr": "127.0.0.1"}}}
+  },
+  {
+    "level": "info",
+    "message": "Processing by ExampleController#raise_error as */*",
+    "contains": {"controller_called": {"controller": "ExampleController", "action": "raise_error"}, "context": {"http": {"path": "/raise_error"}}}
+  },
+  {
+    "level": "fatal",
+    "message": "ArgumentError (Something went wrong, this action raised an exception!)",
+    "contains": {"error": {"name": "ArgumentError", "message": "Something went wrong, this action raised an exception!", "backtrace_json": ["app/controllers/example_controller.rb:55:in "]}, "context": {"http": {"path": "/raise_error"}}}
+  },
+  {
+    "level": "info",
+    "message_prefix": "Completed 500 Internal Server Error in ",
+    "contains": {"event": {"http_response_sent": {"status": 500}}, "context": {"http": {"path": "/raise_error"}}}
+  }
+]

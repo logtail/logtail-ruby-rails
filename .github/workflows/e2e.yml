@@ -1,0 +1,275 @@
+name: E2E
+
+# Proves that the gem still delivers a Rails app's logs to Better Stack. Every job creates its own ruby source through
+# the Telemetry API, warms it up, starts the example project (example-project/, a Rails app) with that source's token
+# and ingesting host the way its README tells customers to (bin/rails server), requests /send_logs and /raise_error,
+# stops the server with Ctrl-C, reads the stored rows back through the testing team's SQL API connection, checks them
+# exactly against e2e/expected.json (nothing missing, extra or duplicated), and deletes the source again, together with
+# sources of earlier runs left behind for more than 3 hours. e2e/plan.sh plans four legs:
+#   floor   the oldest Rails the example runs on (its config.load_defaults, 7.0) at its newest patch, on the oldest Ruby
+#           that release allows, with logtail and logtail-rack at logtail-rails.gemspec's floors. The gemspec allows
+#           Rails 5.0 and Ruby 2.5, which only the unit tests (main.yml) cover.
+#   rails7  the newest Rails 7 on Ruby 3.2, with the newest logtail and logtail-rack
+#   latest  the newest stable Ruby with the newest Rails, logtail and logtail-rack releases; Bundler failing to install
+#           exactly those fails the job
+#   canary  ruby-head with the current commit of Rails' main branch
+# The floor and the Rails 7 leg run on the oldest Ubuntu image GitHub offers, latest and canary on ubuntu-latest, so a
+# new runner image is covered as well.
+# Every job checks, before it creates a source, that the Ruby running, the client (the gem built here, or rubygems.org
+# on the schedule), Rails, logtail and logtail-rack are the planned ones, and writes them into its summary. Which rows
+# the example logs depends on the Rails version: e2e/expected.json marks the ones a newer Rails adds with since_rails.
+# Pushes to main and pull requests install the gem built from the checkout. The daily schedule installs the newest
+# release from rubygems.org, which is what a customer gets today. A failure on main or on the schedule files a Linear
+# issue (notify_linear_failure.yml), at low priority when only the canary failed.
+# Pull requests from forks run only the plan: they get no secrets, so they cannot create a source.
+#
+# Secrets: TEST_TEAM_TELEMETRY_API, TEST_TEAM_CONNECTION_USERNAME, TEST_TEAM_CONNECTION_PASSWORD (Better Stack's E2E
+# testing team), LINEAR_* (see notify_linear_failure.yml).
+#
+# One leg, or exact versions: Actions → E2E → Run workflow, pick the leg and optionally set ruby-version (e.g. 3.3.6 or
+# head) or rails-version (a release such as 8.0.3, or a commit of Rails' main branch such as 3ba9e53), which replace
+# the planned versions of every leg that runs. That is how a failure is bisected to one release or commit.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '15 7 * * *'
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: 'Leg to run'
+        type: choice
+        options: [all, floor, rails7, latest, canary]
+        default: all
+      source:
+        description: 'checkout: the gem built from this checkout, as the Release workflow builds it. rubygems: its newest release on rubygems.org, what a customer installs'
+        type: choice
+        options: [checkout, rubygems]
+        default: checkout
+      ruby-version:
+        description: 'One exact Ruby version (e.g. 3.3.6 or head) instead of the planned one'
+        type: string
+      rails-version:
+        description: 'One exact Rails release (e.g. 8.0.3) or commit of its main branch (e.g. 3ba9e53) instead of the planned one'
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # -eo pipefail: a failed command in front of a pipe fails the step.
+    shell: bash
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+
+    steps:
+      - name: "[Setup] Checkout code"
+        uses: actions/checkout@v7
+
+      - name: "[Setup] Plan the legs"
+        id: plan
+        env:
+          LEG: ${{ inputs.leg || 'all' }}
+          RUBY_VERSION_INPUT: ${{ inputs.ruby-version }}
+          RAILS_VERSION_INPUT: ${{ inputs.rails-version }}
+          # The schedule tests what a customer installs today, pushes and pull requests test the checkout.
+          CLIENT_FROM: ${{ github.event_name == 'schedule' && 'rubygems' || inputs.source || 'checkout' }}
+        run: |
+          MATRIX=$(bash e2e/plan.sh)
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          jq . <<<"$MATRIX"
+
+  test:
+    needs: plan
+    name: ${{ matrix.name }}
+    # Forks and Dependabot get no repository secrets, so their pull requests run only the plan.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+
+    env:
+      LEG: ${{ matrix.leg }}
+      PLANNED_RUBY: ${{ matrix.ruby }}
+      RAILS: ${{ matrix.rails }}
+      RAILS_REF: ${{ matrix.rails_ref }}
+      SQLITE3: ${{ matrix.sqlite3 }}
+      LOGTAIL: ${{ matrix.logtail }}
+      LOGTAIL_RACK: ${{ matrix.logtail_rack }}
+      CLIENT_FROM: ${{ matrix.source }}
+      CLIENT: ${{ matrix.client }}
+
+    steps:
+      - name: "[Setup] Checkout code"
+        uses: actions/checkout@v7
+
+      - name: "[Setup] Ruby ${{ matrix.ruby }}"
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - name: "[Setup] Build and install the client"
+        run: |
+          if [ "$CLIENT_FROM" = rubygems ]; then
+            echo "The example takes logtail-rails $CLIENT, its newest release, from rubygems.org."
+          else
+            # The gem the Release workflow builds and pushes to rubygems.org, installed without its dependencies: the
+            # next step installs those at the leg's versions, and Bundler takes this gem as it is installed.
+            gem build logtail-rails.gemspec
+            gem install --local --ignore-dependencies "logtail-rails-$CLIENT.gem"
+          fi
+
+      - name: "[Setup] Install the example's gems at the leg's versions"
+        run: bash e2e/example.sh install
+
+      - name: "[Verify] Installed versions are the planned ones"
+        working-directory: example-project
+        run: |
+          bundle exec ruby ../e2e/installed.rb > ../out/installed.txt
+          installed() { sed -n "s/^$1=//p" ../out/installed.txt; }
+          if [ "$CLIENT_FROM" = checkout ]; then FROM="the gem built here"; else FROM="rubygems.org"; fi
+          RAILS_FROM=$(installed rails)
+          [ "$RAILS" != main ] || RAILS_FROM="$RAILS_FROM from main at $(installed rails_ref | cut -c 1-7)"
+          echo "- $(installed ruby_description), Rails $RAILS_FROM, logtail-rails $(installed client) from $FROM, logtail $(installed logtail), logtail-rack $(installed logtail_rack), sqlite3 $(installed sqlite3)" | tee -a ../out/versions.md "$GITHUB_STEP_SUMMARY"
+          # The rows to expect depend on the Rails version, see since_rails in e2e/expected.json.
+          echo "RAILS_INSTALLED=$(installed rails)" >> "$GITHUB_ENV"
+          FAILED=0
+          # The planned Ruby is a minor (3.2), an exact version (4.0.9) or head, which reports patch level -1.
+          RUBY=$(installed ruby)
+          case "$PLANNED_RUBY" in
+            head) [ "$(installed ruby_dev)" = true ] || { echo "::error::Ruby $RUBY is running, but the $LEG leg plans ruby-head."; FAILED=1; } ;;
+            *) case "$RUBY" in
+                 "$PLANNED_RUBY" | "$PLANNED_RUBY".*) ;;
+                 *) echo "::error::Ruby $RUBY is running, but the $LEG leg plans $PLANNED_RUBY."; FAILED=1 ;;
+               esac ;;
+          esac
+          if [ "$RAILS" = main ]; then
+            case "$(installed rails_ref)" in
+              "$RAILS_REF"*) ;;
+              *) echo "::error::Rails $(installed rails) at '$(installed rails_ref)' is installed, but the $LEG leg plans Rails' main branch at $RAILS_REF."; FAILED=1 ;;
+            esac
+          elif [ "$(installed rails)" != "$RAILS" ]; then
+            echo "::error::Rails $(installed rails) is installed, but the $LEG leg plans $RAILS."; FAILED=1
+          fi
+          # Empty for the canary, which takes whatever Bundler picks and only reports it.
+          for check in "logtail $(installed logtail) $LOGTAIL" "logtail-rack $(installed logtail_rack) $LOGTAIL_RACK" "logtail-rails $(installed client) $CLIENT"; do
+            read -r name got want <<<"$check"
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then
+              echo "::error::$name $got is installed, but the $LEG leg plans $want."
+              FAILED=1
+            fi
+          done
+          # And the installed client is the gem built here, not a release of the same version from rubygems.org:
+          # RubyGems keeps the .gem it installed from in its cache, and the installed lib/ is the checkout's, file for file.
+          if [ "$CLIENT_FROM" = checkout ]; then
+            if ! cmp -s "../logtail-rails-$CLIENT.gem" "$(installed client_gem)"; then
+              echo "::error::logtail-rails was not installed from the gem built here: $(installed client_gem) differs from logtail-rails-$CLIENT.gem."
+              FAILED=1
+            fi
+            if ! diff -r ../lib "$(installed client_dir)/lib" > ../out/client.diff; then
+              head -n 20 ../out/client.diff
+              echo "::error::The installed gem's lib/ in $(installed client_dir) differs from the checkout's lib/ directory."
+              FAILED=1
+            fi
+          fi
+          exit "$FAILED"
+
+      # Before a source is created: an app that cannot even boot with these versions needs no round trip. Without a
+      # source token the gem logs to STDOUT.
+      - name: "[Verify] The example app boots with these versions"
+        working-directory: example-project
+        run: |
+          if ! bin/rails runner 'puts "Rails #{Rails.version} booted the example app"' > ../out/boot.log 2>&1; then
+            cat ../out/boot.log
+            echo "::error::The example app does not boot: $(grep -m 1 -E 'Error|error' ../out/boot.log || tail -n 1 ../out/boot.log)"
+            exit 1
+          fi
+          cat ../out/boot.log
+
+      - name: "[Setup] Create a source"
+        id: source
+        uses: ./.github/actions/create-source
+        with:
+          api-token: ${{ secrets.TEST_TEAM_TELEMETRY_API }}
+          name: e2e-rails-gh${{ github.run_id }}a${{ github.run_attempt }}-${{ matrix.leg }}
+          platform: ruby
+
+      - name: "[Test] Run the example project"
+        env:
+          BETTER_STACK_SOURCE_TOKEN: ${{ steps.source.outputs.token }}
+          BETTER_STACK_INGESTING_HOST: ${{ steps.source.outputs.ingesting-host }}
+        run: bash e2e/example.sh run
+
+      - name: "[Setup] The rows Rails ${{ env.RAILS_INSTALLED }} logs"
+        run: |
+          # The rows marked since_rails that this Rails is too old for are left out.
+          jq --arg rails "$RAILS_INSTALLED" 'def minor: split(".")[0:2] | map(tonumber);
+            map(select((.since_rails // "0") | minor <= ($rails | minor)) | del(.since_rails))' e2e/expected.json > out/expected.json
+          echo "$(jq length out/expected.json) of $(jq length e2e/expected.json) rows in e2e/expected.json"
+
+      - name: "[Verify] Read the rows back"
+        uses: ./.github/actions/verify-logs
+        with:
+          connection-username: ${{ secrets.TEST_TEAM_CONNECTION_USERNAME }}
+          connection-password: ${{ secrets.TEST_TEAM_CONNECTION_PASSWORD }}
+          connect-host: ${{ steps.source.outputs.connect-host }}
+          collection: ${{ steps.source.outputs.collection }}
+          expected: out/expected.json
+
+      - name: "[Cleanup] Delete this job's source and stale ones of earlier runs"
+        if: ${{ always() }}
+        uses: ./.github/actions/cleanup-sources
+        with:
+          api-token: ${{ secrets.TEST_TEAM_TELEMETRY_API }}
+          prefix: e2e-rails-
+          id: ${{ steps.source.outputs.id }}
+
+      - name: "[Report] Job summary"
+        if: ${{ always() }}
+        run: |
+          if [ -f out/summary.md ]; then
+            { echo; cat out/summary.md; } >> "$GITHUB_STEP_SUMMARY"
+            # The Linear issue names the job and links the run, so it gets the versions, the read-back and the
+            # cleanup only when that left something behind. Without a read-back summary the notifier takes the
+            # job's ::error:: lines instead.
+            mkdir -p report
+            { cat out/versions.md; echo; cat out/summary.md; } > report/summary.md
+            if grep -q '❌' out/cleanup.md 2>/dev/null; then { echo; cat out/cleanup.md; } >> report/summary.md; fi
+          else
+            { echo; echo "❌ Stopped before the rows were read back, see the failed step."; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f out/cleanup.md ]; then { echo; cat out/cleanup.md; } >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: "[Report] Hand the summary to the Linear issue"
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-summary-${{ matrix.name }}
+          path: report/summary.md
+          if-no-files-found: ignore
+          retention-days: 7
+          # A re-run attempt uploads under the same name.
+          overwrite: true
+
+  notify-linear:
+    if: ${{ failure() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule') }}
+    needs: [test]
+    # The notifier reads the failed jobs, their summary artifacts and their annotations.
+    permissions:
+      contents: read
+      actions: read
+      checks: read
+    uses: ./.github/workflows/notify_linear_failure.yml
+    with:
+      job_summaries: true
+    secrets: inherit
