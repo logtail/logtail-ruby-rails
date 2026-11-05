@@ -8,8 +8,8 @@ Bundler.require(*Rails.groups)
 
 module ExampleProject
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 8.1
+    # Initialize configuration defaults of Rails 7.1, the oldest Rails this example runs on.
+    config.load_defaults 7.1
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -19,9 +19,10 @@ module ExampleProject
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # Send the logs to your Better Stack source, its token and ingesting host are read from the environment
     config.logger = Logtail::Logger.create_default_logger(
-      "<SOURCE_TOKEN>",
-      ingesting_host: "<INGESTING_HOST>",
+      ENV["BETTER_STACK_SOURCE_TOKEN"],
+      ingesting_host: ENV["BETTER_STACK_INGESTING_HOST"],
     )
   end
 end

@@ -9,23 +9,23 @@ You can download the example project from GitHub directly or you can clone it to
 bundle install
 ```
 
-This will install all dependencies listed in the `Gemfile.lock` file.
+This will install all dependencies listed in the `Gemfile`. The example runs on Rails 7.1 and newer.
 
-Then replace `<SOURCE_TOKEN>` and `<INGESTING_HOST>` in `config/application.rb` with your actual source token and ingesting host which you can find by going to [Sources](https://telemetry.betterstack.com/team/0/sources) -> Configure in Better Stack.
+`config/application.rb` reads your source token and ingesting host from the environment. You can find them by going to [Sources](https://telemetry.betterstack.com/team/0/sources) -> Configure in Better Stack.
 
 ```ruby
 config.logger = Logtail::Logger.create_default_logger(
-  "<YOUR_ACTUAL_SOURCE_TOKEN>",
-  ingesting_host: "in.logs.betterstack.com",
+  ENV["BETTER_STACK_SOURCE_TOKEN"],
+  ingesting_host: ENV["BETTER_STACK_INGESTING_HOST"],
 )
 ```
 
 ## Run the example project
  
-To run the example application, run the following command:
+To run the example application, run the following command with your source token and ingesting host:
 
 ```bash
-rails server
+BETTER_STACK_SOURCE_TOKEN=<source_token> BETTER_STACK_INGESTING_HOST=<ingesting_host> bin/rails server
 ```
 
 This will open a local server [127.0.0.1:3000.](http://127.0.0.1:3000/) On the main page, click the "Let's go!" button to generate test logs.
@@ -37,7 +37,9 @@ All done!
 Log into your Logtail account to check your logs.
 ```
 
-This will create a total of 6 different logs, each corresponding to a different log level and one with additional structured data. You can review these logs in Logtail.
+This will create a log for each log level, one with tags and one with additional structured data, and on Rails 8.1 and newer two events reported with `Rails.event`, next to the request, controller and template logs of the Rails integration. Click "Raise an exception" on the main page to see how an exception raised in a controller action is logged. You can review these logs in Better Stack.
+
+Stop the server with Ctrl-C. The logger sends what it still holds before the server exits.
 
 # Logging
 
